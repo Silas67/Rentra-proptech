@@ -1,0 +1,103 @@
+import { Property, User, Referral, Booking } from "./types";
+import property1 from "@/assets/property-1.jpg";
+import property2 from "@/assets/property-2.jpg";
+import property3 from "@/assets/property-3.jpg";
+import property4 from "@/assets/property-4.jpg";
+
+export const mockProperties: Property[] = [
+  {
+    id: "p1",
+    title: "Luxury 3-Bedroom Apartment in Lekki",
+    description: "Spacious and modern apartment with stunning ocean views. Features include a fully fitted kitchen, ample parking, 24/7 security, and access to a shared pool and gym.",
+    price: 3500000,
+    currency: "₦",
+    location: "Lekki Phase 1",
+    city: "Lagos",
+    state: "Lagos",
+    address: "12 Admiralty Way, Lekki Phase 1",
+    bedrooms: 3,
+    bathrooms: 3,
+    type: "apartment",
+    status: "available",
+    images: [property1],
+    landlordId: "u3",
+    agentId: "u2",
+    amenities: ["Pool", "Gym", "Parking", "24/7 Security", "Generator"],
+    createdAt: "2024-01-15",
+  },
+  {
+    id: "p2",
+    title: "Executive 2-Bedroom in Victoria Island",
+    description: "Premium executive apartment in the heart of VI. Walking distance to major business centers and entertainment spots.",
+    price: 5000000,
+    currency: "₦",
+    location: "Victoria Island",
+    city: "Lagos",
+    state: "Lagos",
+    address: "45 Adeola Odeku Street, VI",
+    bedrooms: 2,
+    bathrooms: 2,
+    type: "apartment",
+    status: "available",
+    images: [property2],
+    landlordId: "u3",
+    amenities: ["Parking", "Security", "Elevator", "CCTV"],
+    createdAt: "2024-02-01",
+  },
+  {
+    id: "p3",
+    title: "Modern Studio Apartment in Ikeja",
+    description: "Newly built studio apartment perfect for young professionals. Close to the airport and major shopping malls.",
+    price: 1200000,
+    currency: "₦",
+    location: "Ikeja GRA",
+    city: "Lagos",
+    state: "Lagos",
+    address: "8 Joel Ogunnaike Street, Ikeja",
+    bedrooms: 1,
+    bathrooms: 1,
+    type: "studio",
+    status: "available",
+    images: [property3],
+    landlordId: "u3",
+    agentId: "u2",
+    amenities: ["Parking", "Security", "Water Supply"],
+    createdAt: "2024-02-10",
+  },
+  {
+    id: "p4",
+    title: "4-Bedroom Duplex in Ikoyi",
+    description: "Stunning duplex with private garden. Premium finishes throughout. Ideal for families seeking luxury living.",
+    price: 8000000,
+    currency: "₦",
+    location: "Ikoyi",
+    city: "Lagos",
+    state: "Lagos",
+    address: "22 Bourdillon Road, Ikoyi",
+    bedrooms: 4,
+    bathrooms: 4,
+    type: "duplex",
+    status: "rented",
+    images: [property4],
+    landlordId: "u3",
+    amenities: ["Garden", "Pool", "BQ", "Parking", "Security", "Generator"],
+    createdAt: "2024-01-05",
+  },
+];
+
+export const mockUsers: User[] = [
+  { id: "u1", email: "tenant@rentra.com", name: "Adaeze Okafor", role: "tenant", phone: "08012345678", createdAt: "2024-01-01" },
+  { id: "u2", email: "agent@rentra.com", name: "Chinedu Eze", role: "agent", phone: "08098765432", referralCode: "CHINEDU2024", createdAt: "2024-01-01" },
+  { id: "u3", email: "landlord@rentra.com", name: "Emeka Johnson", role: "landlord", phone: "08055555555", createdAt: "2024-01-01" },
+];
+
+export const mockReferrals: Referral[] = [
+  { id: "r1", agentId: "u2", propertyId: "p1", referralCode: "CHINEDU-P1", clicks: 45, inspections: 8, commission: 150000, status: "active", createdAt: "2024-02-01" },
+  { id: "r2", agentId: "u2", propertyId: "p3", referralCode: "CHINEDU-P3", clicks: 22, inspections: 3, commission: 50000, status: "active", createdAt: "2024-02-15" },
+  { id: "r3", agentId: "u2", propertyId: "p4", referralCode: "CHINEDU-P4", clicks: 60, inspections: 12, commission: 300000, status: "converted", createdAt: "2024-01-10" },
+];
+
+export const mockBookings: Booking[] = [
+  { id: "b1", propertyId: "p1", tenantId: "u1", agentId: "u2", date: "2024-03-15", time: "10:00", status: "confirmed", tenantName: "Adaeze Okafor", tenantPhone: "08012345678", tenantEmail: "tenant@rentra.com", createdAt: "2024-03-01" },
+  { id: "b2", propertyId: "p2", tenantId: "u1", date: "2024-03-20", time: "14:00", status: "pending", tenantName: "Adaeze Okafor", tenantPhone: "08012345678", tenantEmail: "tenant@rentra.com", createdAt: "2024-03-05" },
+];
