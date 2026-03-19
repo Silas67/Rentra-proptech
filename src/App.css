@@ -40,3 +40,27 @@
 .read-the-docs {
   color: #888;
 }
+
+@font-face {
+  font-family: "Zina";
+  src: url(/fonts/Zina.woff2) format("woff2");
+  font-weight: 200 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+.Zina {
+  font-family: "Zina", sans-serif;
+}
+
+.scroll {
+  /* Firefox */
+  scrollbar-width: none;
+  /* Internet Explorer 10+ */
+  -ms-overflow-style: none;
+}
+
+/* WebKit (Chrome, Safari, Edge, Opera) */
+.scroll::-webkit-scrollbar {
+  display: none;
+}

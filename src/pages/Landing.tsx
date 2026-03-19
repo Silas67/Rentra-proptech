@@ -1,40 +1,23 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search, Shield, Users, TrendingUp } from "lucide-react";
-import heroImage from "@/assets/hero-property.jpg";
 import PropertyCard from "@/components/PropertyCard";
 import { mockProperties } from "@/lib/mock-data";
+import { Hero } from "@/sections/Hero";
+import { Services } from "@/sections/Services";
+import { introGridConfig } from "@/config";
+import { WhyChooseMe } from "@/sections/WhyChooseMe";
+import { FeaturedProjects } from "@/sections/FeaturedProjects";
+import { Testimonials } from "@/sections/Testimonials";
+import { Footer } from "@/sections/Footer";
 
 const Landing = () => {
   const featured = mockProperties.filter((p) => p.status === "available").slice(0, 3);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen scroll">
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroImage} alt="Modern apartment building" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/70 to-foreground/40" />
-        </div>
-        <div className="container relative z-10 flex min-h-[85vh] flex-col justify-center py-20">
-          <div className="max-w-2xl">
-            <h1 className="mb-4 font-display text-4xl font-bold leading-tight text-background sm:text-5xl lg:text-6xl">
-              Find Your Perfect <span className="text-secondary">Rental Home</span>
-            </h1>
-            <p className="mb-8 text-lg text-background/80 sm:text-xl">
-              Rentra connects tenants, agents, and landlords on one seamless platform. Browse properties, book inspections, and move in faster.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Button size="lg" asChild className="text-base">
-                <Link to="/search"><Search className="mr-2 h-5 w-5" /> Browse Properties</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="border-background/30 bg-background/10 text-base text-background backdrop-blur-sm hover:bg-background/20 hover:text-background">
-                <Link to="/signup">List Your Property</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Hero />
 
       {/* Value Props */}
       <section className="border-b py-16">
@@ -62,15 +45,40 @@ const Landing = () => {
       {/* Featured */}
       <section className="py-16">
         <div className="container">
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <h2 className="font-display text-3xl font-bold">Featured Properties</h2>
-              <p className="mt-1 text-muted-foreground">Handpicked rentals in top locations</p>
+          <div className="mb-8 flex items-end max-sm:flex-col justify-between">
+            <div className="max-w-3xl mx-auto text-center mb-16 md:mb-12">
+              <div className="mb-4 group cursor-default flex flex-col items-center justify-center">
+                <div className="overflow-hidden">
+                  <div
+                    className=""
+                  >
+                    <span className="block text-3xl md:text-4xl lg:text-5xl font-sans font-bold text-softblack tracking-tight">
+                      {introGridConfig.titleLine1}
+                    </span>
+                  </div>
+                </div>
+                <div className="overflow-hidden">
+                  <div
+                    className="text-secondary"
+                  >
+                    <div className="w-fit block text-3xl md:text-4xl lg:text-5xl font-serif italic font-normal ">
+                      {introGridConfig.titleLine2}
+                      <p className='w-full scale-x-0 group-hover:scale-x-100 border transition-all origin-left duration-300 border-secondary '></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-base md:text-sm text-softblack/60 font-body leading-relaxed opacity-100"
+              >
+                {introGridConfig.description}
+              </p>
             </div>
             <Button variant="ghost" asChild>
               <Link to="/search">View all →</Link>
             </Button>
           </div>
+
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((p) => (
               <PropertyCard key={p.id} property={p} />
@@ -79,8 +87,20 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Services */}
+      <Services />
+
+      {/* Why Choose Us */}
+      <WhyChooseMe />
+
+      {/* Featured Projects*/}
+      <FeaturedProjects />
+
+      {/* Testimonials */}
+      <Testimonials />
+
       {/* CTA */}
-      <section className="border-t bg-primary py-16">
+      <section className="border-t bg-forest-mid py-16">
         <div className="container text-center">
           <Users className="mx-auto mb-4 h-10 w-10 text-primary-foreground/80" />
           <h2 className="mb-2 font-display text-3xl font-bold text-primary-foreground">Are you an Agent?</h2>
@@ -94,12 +114,7 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8">
-        <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
-          <span className="font-display font-bold text-foreground">Rentra</span>
-          <span>© 2024 Rentra. All rights reserved.</span>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

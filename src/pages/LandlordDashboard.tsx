@@ -25,10 +25,10 @@ const LandlordDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen py-6">
+    <div className="min-h-screen pt-24 pb-6">
       <div className="container">
-        <div className="mb-6">
-          <h1 className="font-display text-3xl font-bold">Landlord Dashboard</h1>
+        <div className="mb-6 w-full text-center ">
+          <h1 className="font-sans text-3xl font-bold">Landlord Dashboard</h1>
           <p className="text-muted-foreground">Manage your properties, {user?.name || "Landlord"}</p>
         </div>
 

@@ -24,15 +24,15 @@ const PropertySearch = () => {
   }, [query, type, priceRange]);
 
   return (
-    <div className="min-h-screen py-6">
+    <div className="min-h-screen pt-24 pb-6 ">
       <div className="container">
-        <div className="mb-6">
-          <h1 className="font-display text-3xl font-bold">Browse Properties</h1>
-          <p className="text-muted-foreground">Find your next home in Lagos</p>
+        <div className="mb-8 w-full text-center">
+          <h1 className="font-display text-3xl font-bold text-forest-dark">Browse Properties</h1>
+          <p className="text-muted-foreground">Find your next home now</p>
         </div>
 
         {/* Filters */}
-        <div className="mb-8 flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row">
+        <div className="mb-8 flex flex-col gap-3 rounded-xl bg-transparent p-4 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="Search by location or title..." value={query} onChange={(e) => setQuery(e.target.value)} className="pl-9" />

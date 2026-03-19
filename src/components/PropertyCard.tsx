@@ -29,7 +29,7 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
           </div>
         </div>
         <div className="p-4">
-          <h3 className="mb-1 font-semibold text-card-foreground line-clamp-1">{property.title}</h3>
+          <h3 className="mb-1 font-semibold text-card-foreground font-sans line-clamp-1">{property.title}</h3>
           <div className="mb-3 flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="h-3.5 w-3.5" />
             {property.location}, {property.city}

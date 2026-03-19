@@ -22,7 +22,7 @@ const Login = () => {
     setLoading(false);
     if (success) {
       toast({ title: "Welcome back!" });
-      navigate("/search");
+      navigate("/");
     } else {
       toast({ title: "Login failed", variant: "destructive" });
     }

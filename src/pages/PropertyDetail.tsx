@@ -8,8 +8,10 @@ import { useAuth } from "@/contexts/AuthContext";
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const property = mockProperties.find((p) => p.id === id);
+
+  const isAuthenticated = !!user;
 
   if (!property) {
     return (
@@ -30,8 +32,12 @@ const PropertyDetail = () => {
         </Button>
 
         {/* Image */}
-        <div className="mb-6 overflow-hidden rounded-2xl">
-          <img src={property.images[0]} alt={property.title} className="aspect-video w-full object-cover" />
+        <div className="mb-6 overflow-hidden rounded-2xl scale-[0.8] shadow-lg">
+          <img
+            src={property.images?.[0] || "/placeholder.jpg"}
+            alt={property.title}
+            className="aspect-video w-full object-cover"
+          />
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
@@ -49,14 +55,14 @@ const PropertyDetail = () => {
               </Badge>
             </div>
 
-            <div className="mb-6 flex flex-wrap gap-6 rounded-xl border bg-card p-4">
+            <div className="mb-6 flex flex-wrap items-center gap-6 rounded-xl border bg-card p-4">
               <div className="text-center">
                 <p className="text-2xl font-bold text-primary">{property.currency}{property.price.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">per year</p>
               </div>
               <div className="flex items-center gap-1"><Bed className="h-4 w-4 text-muted-foreground" /> {property.bedrooms} Bedrooms</div>
               <div className="flex items-center gap-1"><Bath className="h-4 w-4 text-muted-foreground" /> {property.bathrooms} Bathrooms</div>
-              <span className="rounded-full bg-muted px-3 py-1 text-sm capitalize">{property.type}</span>
+              <span className="rounded-full bg-muted px-4 py-1 text-sm capitalize h-fit">{property.type}</span>
             </div>
 
             <div className="mb-6">
