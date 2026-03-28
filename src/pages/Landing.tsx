@@ -33,7 +33,7 @@ const Landing = () => {
                   <item.icon className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="mb-1 font-semibold">{item.title}</h3>
+                  <h3 className="mb-1 font-semibold font-sans">{item.title}</h3>
                   <p className="text-sm text-muted-foreground">{item.desc}</p>
                 </div>
               </div>
@@ -103,7 +103,7 @@ const Landing = () => {
       <section className="border-t bg-forest-mid py-16">
         <div className="container text-center">
           <Users className="mx-auto mb-4 h-10 w-10 text-primary-foreground/80" />
-          <h2 className="mb-2 font-display text-3xl font-bold text-primary-foreground">Are you an Agent?</h2>
+          <h2 className="mb-2 text-3xl font-bold text-primary-foreground font-sans">Are you an Agent?</h2>
           <p className="mx-auto mb-6 max-w-md text-primary-foreground/80">
             Generate referral links, track inspections, and earn commissions when tenants rent through you.
           </p>

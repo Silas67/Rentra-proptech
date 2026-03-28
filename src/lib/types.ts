@@ -15,6 +15,7 @@ export interface Property {
   id: string;
   title: string;
   description: string;
+  listingType: "rent" | "sale";
   price: number;
   currency: string;
   location: string;
@@ -24,7 +25,7 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   type: "apartment" | "house" | "studio" | "duplex";
-  status: "available" | "rented" | "pending";
+  status: "available" | "rented" | "sold" | "pending";
   images: string[];
   landlordId: string;
   agentId?: string;

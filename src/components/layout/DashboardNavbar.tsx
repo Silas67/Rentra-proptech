@@ -18,7 +18,7 @@ const Navbar = () => {
 
         if (role === "agent") return navigate("/agent-dashboard");
         if (role === "landlord") return navigate("/landlord-dashboard");
-        if (role === "tenant") return navigate("/search");
+        if (role === "tenant") return navigate("/tenant-dashboard");
 
         // fallback if role not set
         return navigate("/onboarding");
@@ -35,7 +35,7 @@ const Navbar = () => {
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
                         <Home className="h-5 w-5 text-primary-foreground" />
                     </div>
-                    <div className="text-white font-sans font-bold text-lg tracking-tight">
+                    <div className="text-forest-dark font-sans font-bold text-lg tracking-tight">
                         {heroConfig.brandName}
                     </div>
                 </Link>
@@ -43,47 +43,12 @@ const Navbar = () => {
                 {/* Desktop Navigation */}
                 <div className="hidden items-center gap-6 md:flex">
 
-                    {heroConfig.navLinks.length > 0 && (
-                        <div className="hidden md:flex items-center gap-8 text-white/80 text-sm font-body">
-                            {heroConfig.navLinks.map((link) => (
-                                <div key={link.label} className="relative group">
 
-                                    <a
-                                        href={link.href}
-                                        className="hover:text-white transition-colors duration-300 group"
-                                    >
-                                        <div className="flex gap-1">
-                                            {link.label}
-                                            {link.submenu && <span className="arrow"></span>}
-                                        </div>
-
-                                        <p className="w-full scale-x-0 group-hover:scale-x-100 border transition-all origin-left duration-300 border-white"></p>
-                                    </a>
-
-                                    {/* Dropdown */}
-                                    {link.submenu && (
-                                        <div className="absolute left-0 mt-2 w-40 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                            {link.submenu.map((sub) => (
-                                                <a
-                                                    key={sub.label}
-                                                    href={sub.href}
-                                                    className="block px-4 py-2 hover:bg-forest-dark hover:text-white transition-colors duration-300"
-                                                >
-                                                    {sub.label}
-                                                </a>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                </div>
-                            ))}
-                        </div>
-                    )}
 
                     {/* Search */}
                     <Link
                         to="/listings"
-                        className="flex items-center gap-1.5 text-sm font-medium text-white/80 transition-colors hover:text-foreground"
+                        className="flex items-center gap-1.5 text-sm font-medium text-forest-dark/80 transition-colors hover:text-forest-dark"
                     >
                         <Search className="h-4 w-4" />
                     </Link>
@@ -92,12 +57,12 @@ const Navbar = () => {
                     {isAuthenticated ? (
                         <div className="flex items-center gap-3">
 
-                            <Button onClick={goToDashboard}>
+                            <Button onClick={goToDashboard} variant="outline" size="sm" className="hidden md:flex">
                                 Dashboard
                             </Button>
 
-                            <Button variant="ghost" size="sm" onClick={logout}>
-                                <LogOut className="h-6 w-4 text-white/80" />
+                            <Button variant="outline" size="sm" onClick={logout}>
+                                <LogOut className="h-6 w-4" />
                             </Button>
 
                         </div>

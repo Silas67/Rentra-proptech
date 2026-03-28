@@ -38,7 +38,7 @@ const Onboarding = () => {
 
     if (role === "agent") navigate("/agent-dashboard");
     else if (role === "landlord") navigate("/landlord-dashboard");
-    else navigate("/listings");
+    else navigate("/tenant-dashboard");
   };
 
   return (

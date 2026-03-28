@@ -17,12 +17,12 @@ const Navbar = () => {
 
     if (role === "agent") return navigate("/agent-dashboard");
     if (role === "landlord") return navigate("/landlord-dashboard");
-    if (role === "tenant") return navigate("/listings");
+    if (role === "tenant") return navigate("/tenant-dashboard");
 
     return navigate("/onboarding");
   };
 
-  if (loading) return null;
+  if (loading) return <div className="flex items-center justify-center h-16 bg-forest-dark">Loading...</div>;
 
   return (
     <nav className="absolute top-0 left-0 right-0 z-40 px-6 md:px-6 py-2 flex items-center justify-between">

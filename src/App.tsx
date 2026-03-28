@@ -18,19 +18,22 @@ import PropertyDetail from "@/pages/PropertyDetail";
 import BookInspection from "@/pages/BookInspection";
 import AgentDashboard from "@/pages/AgentDashboard";
 import LandlordDashboard from "@/pages/LandlordDashboard";
-
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/auth/ProtectedRoute";
+import TenantDashboard from "./pages/TenantDashboard";
+import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+
           <Routes>
             {/* Public pages */}
             <Route element={<MainLayout />}>
@@ -57,6 +60,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/tenant-dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["tenant"]}>
+                    <TenantDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/agent-dashboard"
                 element={
                   <ProtectedRoute allowedRoles={["agent"]}>
@@ -75,12 +86,15 @@ const App = () => (
               <Route path="/book-inspection" element={<BookInspection />} />
             </Route>
 
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter >
+  </QueryClientProvider >
 );
 
 export default App;

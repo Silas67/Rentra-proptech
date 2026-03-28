@@ -2,6 +2,8 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { authService } from "@/services/authService"
+import { useNavigate } from "react-router-dom"
+
 
 type User = {
   id: string
@@ -10,25 +12,27 @@ type User = {
   phone?: string
 }
 
-type UserRole = "tenant" | "agent" | "landlord"
+export type UserRole = "tenant" | "agent" | "landlord"
 
 type AuthContextType = {
   user: User | null
-  role: UserRole
+  role: UserRole | null
   loading: boolean
   signup: (email: string, password: string, name: string, phone: number) => Promise<boolean>
   login: (email: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
-  setRole: (role: UserRole) => void
+  setRole: (role: UserRole) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [role, setRole] = useState<UserRole>(null)
+  const [role, setRoleState] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
+  // 🔍 Fetch profile
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
@@ -42,7 +46,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     if (data) {
-      setRole(data.role)
+      setRoleState(data.role)
       setUser((prev) =>
         prev
           ? { ...prev, name: data.name, phone: data.phone }
@@ -51,8 +55,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-
+  // 🚀 INIT
   useEffect(() => {
+    let initialLoad = true
+
     const init = async () => {
       const currentUser = await authService.getCurrentUser()
       if (currentUser) {
@@ -61,31 +67,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       setLoading(false)
     }
+
     init()
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (session?.user) {
-          const u: User = {
-            id: session.user.id,
-            email: session.user.email,
-          }
-          setUser(u)
-          setLoading(false)
-          await fetchProfile(u.id)
+        if (initialLoad) {
+          initialLoad = false
+          return
+        }
 
+        if (session?.user) {
+          const u: User = { id: session.user.id, email: session.user.email }
+          setUser(u)
+          await fetchProfile(u.id)
         } else {
           setUser(null)
-          setRole(null)
+          setRoleState(null)
         }
       }
     )
 
-    return () => {
-      listener.subscription.unsubscribe()
-    }
+    return () => listener.subscription.unsubscribe()
   }, [])
 
+  // 📝 SIGNUP
   const signup = async (
     email: string,
     password: string,
@@ -98,11 +104,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     setUser(user)
 
-    // Optional: store name/phone immediately
-    await supabase.from("profiles").update({
-      name,
-      phone: String(phone),
-    }).eq("id", user.id)
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        name,
+        phone: String(phone),
+      })
+      .eq("id", user.id)
+
+    if (error) {
+      console.error("Profile update error:", error)
+    }
+
+    await fetchProfile(user.id)
 
     return true
   }
@@ -118,15 +132,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return true
   }
 
+
   const logout = async () => {
-    await authService.logout()
+    await supabase.auth.signOut()
     setUser(null)
-    setRole(null)
+    setRoleState(null)
+    navigate("/")
+  }
+
+
+  const setRole = async (role: UserRole) => {
+    if (!user) return
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ role })
+      .eq("id", user.id)
+
+    if (error) {
+      console.error("Error setting role:", error)
+      return
+    }
+
+    setRoleState(role)
   }
 
   return (
     <AuthContext.Provider
-      value={{ user, role, loading, signup, login, logout, setRole }}
+      value={{
+        user,
+        role,
+        loading,
+        signup,
+        login,
+        logout,
+        setRole,
+      }}
     >
       {children}
     </AuthContext.Provider>

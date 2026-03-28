@@ -46,8 +46,7 @@ export const authService = {
     },
 
     async getCurrentUser() {
-        const { data } = await supabase.auth.getUser()
-        return data.user
+        const { data } = await supabase.auth.getSession() // ← reads locally, no network
+        return data.session?.user ?? null
     }
-
 }  
