@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from "@/lib/supabase";
 import { Property } from "@/lib/types";
 
@@ -20,8 +21,10 @@ const mapProperty = (p: Record<string, any>): Property => ({
   images: p.images ?? [],
   amenities: p.amenities ?? [],
   landlordId: p.landlord_id,
+  agentPhone: p.profiles?.phone ?? undefined,
   agentId: p.agent_id,
   createdAt: p.created_at,
+  agencyFee: p.agency_fee ?? 10,
 });
 
 export type PropertyFilters = {
@@ -99,7 +102,7 @@ export const propertyService = {
   async getPropertyById(id: string): Promise<Property | null> {
     const { data, error } = await supabase
       .from("properties")
-      .select("*")
+      .select("*, profiles!agent_id(phone)")
       .eq("id", id)
       .single();
 

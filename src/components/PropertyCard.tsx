@@ -6,6 +6,7 @@ import { useState } from "react";
 import { savedPropertyService } from "@/services/savedPropertyService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import VerificationBadge from "./VerificationBadge";
 
 interface PropertyCardProps {
   property: Property;
@@ -23,8 +24,8 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
     property.status === "available"
       ? "bg-success text-success-foreground"
       : property.status === "rented"
-      ? "bg-destructive text-destructive-foreground"
-      : "bg-warning text-warning-foreground";
+        ? "bg-destructive text-destructive-foreground"
+        : "bg-warning text-warning-foreground";
 
   const isRent = property.listingType === "rent";
 
@@ -85,9 +86,8 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
           </Badge>
 
           {/* Listing type badge */}
-          <Badge className={`absolute left-3 bottom-10 border-0 text-xs font-semibold ${
-            isRent ? "bg-blue-500 text-white" : "bg-emerald-500 text-white"
-          }`}>
+          <Badge className={`absolute left-3 bottom-10 border-0 text-xs font-semibold ${isRent ? "bg-blue-500 text-white" : "bg-emerald-500 text-white"
+            }`}>
             {isRent ? "For Rent" : "For Sale"}
           </Badge>
 
@@ -96,11 +96,10 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
             <button
               onClick={handleSaveToggle}
               disabled={savingId}
-              className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full transition-all ${
-                saved
-                  ? "bg-red-500 text-white shadow-md"
-                  : "bg-white/80 text-gray-500 hover:bg-white hover:text-red-500 backdrop-blur-sm"
-              }`}
+              className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full transition-all ${saved
+                ? "bg-red-500 text-white shadow-md"
+                : "bg-white/80 text-gray-500 hover:bg-white hover:text-red-500 backdrop-blur-sm"
+                }`}
             >
               <Heart className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
             </button>
@@ -125,12 +124,16 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
             <MapPin className="h-3.5 w-3.5 text-red-500" />
             {property.location}, {property.city}
           </div>
+
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Bed className="h-3.5 w-3.5" /> {property.bedrooms} Bed
             </span>
             <span className="flex items-center gap-1">
               <Bath className="h-3.5 w-3.5" /> {property.bathrooms} Bath
+            </span>
+            <span className="ml-auto">
+              <VerificationBadge tier={property.verificationTier} />
             </span>
             <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize">
               {property.type}

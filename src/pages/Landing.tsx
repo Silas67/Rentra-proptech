@@ -75,7 +75,7 @@ const Landing = () => {
               </p>
             </div>
             <Button variant="ghost" asChild>
-              <Link to="/search">View all →</Link>
+              <Link to="/listings">View all →</Link>
             </Button>
           </div>
 

@@ -95,7 +95,7 @@ export function Hero() {
                 ref={textRef}
                 className="absolute inset-0 flex items-center justify-center z-10 will-change-transform"
             >
-                <h1 className="text-[14vw] md:text-[14vw] lg:text-[20vw] Zina
+                <h1 className="text-[22vw] md:text-[14vw] lg:text-[20vw] Zina
                   stroke-white stroke-2 text-[#1f2c25] tracking-tighter leading-none select-none whitespace-nowrap">
                     {heroConfig.backgroundText}
                 </h1>
@@ -124,9 +124,9 @@ export function Hero() {
             {heroConfig.overlayText && (
                 <div
                     ref={overlayTextRef}
-                    className="absolute bottom-[15%] right-[8%] md:right-[12%] z-30 will-change-transform"
+                    className="absolute  max-sm:top-[15%] bottom-[15%] right-[8%] md:right-[12%] z-30 will-change-transform"
                 >
-                    <div className="font-serif italic text-xl md:text-2xl lg:text-3xl text-white/90 tracking-wide cursor-pointer inline-flex gap-2 group">
+                    <div className="font-serif italic text-6xl md:text-2xl lg:text-3xl text-white/90 tracking-wide cursor-pointer inline-flex max-sm:inline-block max-sm:text-center gap-2 group">
                         Find Your{" "}
                         <a href="/" className="text-secondary">
                             Perfect{" "}

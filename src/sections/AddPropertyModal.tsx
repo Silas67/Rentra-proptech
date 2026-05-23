@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Loader2, Upload, ImagePlus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "recharts";
 
 interface AddPropertyModalProps {
     onClose: () => void;
@@ -39,6 +40,7 @@ const AddPropertyModal = ({ onClose, onAdded }: AddPropertyModalProps) => {
         address: "",
         bedrooms: "",
         bathrooms: "",
+        agencyFee: "10",
         type: "apartment" as Property["type"],
         status: "available" as Property["status"],
         amenities: [] as string[],
@@ -275,6 +277,26 @@ const AddPropertyModal = ({ onClose, onAdded }: AddPropertyModalProps) => {
                             </div>
                         </div>
                     </section>
+
+
+                    {/* Agency Fee */}
+                    <div className="space-y-1">
+                        <Label>Agency Fee % <span className="text-muted-foreground text-xs">(NIESV cap is 10%)</span></Label>
+                        <div className="relative">
+                            <Input
+                                type="number"
+                                min="0"
+                                max="30"
+                                placeholder="10"
+                                value={form.agencyFee}
+                                onChange={(e) => set("agencyFee", e.target.value)}
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                        </div>
+                        {Number(form.agencyFee) > 10 && (
+                            <p className="text-xs text-yellow-600">⚠️ This exceeds the NIESV-approved 10% cap</p>
+                        )}
+                    </div>
 
                     {/* Location */}
                     <section className="space-y-3">

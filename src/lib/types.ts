@@ -26,6 +26,9 @@ export interface Property {
   bathrooms: number;
   type: "apartment" | "house" | "studio" | "duplex";
   status: "available" | "rented" | "sold" | "pending";
+  verificationTier?: "self_listed" | "agent_verified" | "rentra_verified";
+  agencyFee?: number; // percentage e.g. 10 means 10%
+  agentPhone?: string
   images: string[];
   landlordId: string;
   agentId?: string;

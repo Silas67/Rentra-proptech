@@ -4,13 +4,21 @@ import { supabase } from "@/lib/supabase";
 import { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Bed, Bath, ArrowLeft, Calendar, Share2, CheckCircle2, Loader2, Home } from "lucide-react";
+import { MapPin, Bed, Bath, ArrowLeft, Calendar, Share2, CheckCircle2, Loader2, Home, Flag, X, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import MessageButton from "@/components/MessageButton";
+import VerificationBadge from "@/components/VerificationBadge";
+import { ShieldCheck } from "lucide-react";
+
 
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,6 +26,60 @@ const PropertyDetail = () => {
   const [activeImage, setActiveImage] = useState(0);
 
   const isAuthenticated = !!user;
+
+  const MoveInCalculator = ({ price, currency }: { price: number; currency: string }) => {
+    const agencyFeeRate = (property.agencyFee ?? 10) / 100;      // NIESV-approved 10%
+    const legalFee = price * 0.10;        // standard 10%
+    const cautionFee = price * 0.05;      // typically 1 month
+    const total = price + agencyFeeRate + legalFee + cautionFee;
+
+    return (
+      <div className="rounded-xl border bg-muted/50 p-4 space-y-2 text-sm">
+        <p className="font-semibold">Estimated Move-In Cost</p>
+        <div className="flex justify-between"><span>Annual Rent</span><span>{currency}{price.toLocaleString()}</span></div>
+        <div className="flex justify-between text-muted-foreground">
+          <span>Agency Fee ({property.agencyFee ?? 10}%)</span>
+          <span>{property.currency}{(property.price * agencyFeeRate).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between"><span>Legal Fee (10%)</span><span>{currency}{legalFee.toLocaleString()}</span></div>
+        <div className="flex justify-between"><span>Caution Deposit</span><span>{currency}{cautionFee.toLocaleString()}</span></div>
+        <div className="border-t pt-2 flex justify-between font-bold text-foreground">
+          <span>Total</span>
+          <span>{property.currency}{(property.price * (1 + agencyFeeRate + 0.10 + 0.05)).toLocaleString()}</span>
+        </div>
+        <p className="text-xs text-muted-foreground">Based on NIESV-approved fee caps</p>
+      </div>
+    );
+  };
+
+  const handleReport = async () => {
+    if (!user) { navigate("/login"); return; }
+    if (!reportReason) {
+      toast({ title: "Please select a reason", variant: "destructive" });
+      return;
+    }
+
+    setReportSubmitting(true);
+
+    const { error } = await supabase
+      .from("listing_reports")
+      .insert({
+        property_id: property.id,
+        reporter_id: user.id,
+        reason: reportReason,
+      });
+
+    setReportSubmitting(false);
+
+    if (error) {
+      toast({ title: "Failed to submit report", variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Report submitted. We'll review within 24 hours. ✓" });
+    setReportOpen(false);
+    setReportReason("");
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -49,6 +111,7 @@ const PropertyDetail = () => {
           address: data.address,
           bedrooms: data.bedrooms,
           bathrooms: data.bathrooms,
+          verificationTier: data.verification_tier ?? "self_listed",
           type: data.type,
           status: data.status,
           images: data.images ?? [],
@@ -56,6 +119,7 @@ const PropertyDetail = () => {
           landlordId: data.landlord_id,
           agentId: data.agent_id,
           createdAt: data.created_at,
+          agencyFee: data.agency_fee ?? 10,
         };
         setProperty(mapped);
       }
@@ -98,6 +162,7 @@ const PropertyDetail = () => {
   const isSold = property.status === "sold";
   const isRented = property.status === "rented";
   const isUnavailable = isSold || isRented;
+
 
   return (
     <div className="min-h-screen pb-20">
@@ -163,13 +228,32 @@ const PropertyDetail = () => {
                   {property.address}, {property.city}, {property.state}
                 </div>
               </div>
+
               <Badge
                 variant={property.status === "available" ? "default" : "destructive"}
                 className="text-sm capitalize"
               >
                 {property.status}
               </Badge>
+
+              <VerificationBadge tier={property.verificationTier} size="md" />
+
+              {property.agencyFee !== undefined && (
+                property.agencyFee <= 10 ? (
+                  <div className="flex items-center gap-1.5 w-fit rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs text-green-700 font-medium">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    NIESV Compliant — {property.agencyFee}% agency fee
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 w-fit rounded-full bg-yellow-50 border border-yellow-200 px-3 py-1 text-xs text-yellow-700 font-medium">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    Agency fee is {property.agencyFee}% — above NIESV 10% cap
+                  </div>
+                )
+              )}
             </div>
+
+
 
             {/* Key Details */}
             <div className="mb-6 flex flex-wrap items-center gap-6 rounded-xl border bg-card p-4">
@@ -222,40 +306,161 @@ const PropertyDetail = () => {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            <div className="sticky top-20 space-y-4 rounded-xl border bg-card p-6 shadow-sm">
-              <h3 className="font-semibold">Interested in this property?</h3>
+            <div className="sticky top-20 space-y-4">
+              <div className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
+                <h3 className="font-semibold">Interested in this property?</h3>
 
-              <div className="rounded-lg bg-muted p-3 text-center">
-                <p className="text-xl font-bold text-primary">
-                  {property.currency}{property.price.toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isRent ? "per year" : "one-time price"}
+                {/* Price */}
+                <div className="rounded-lg bg-muted p-3 text-center">
+                  <p className="text-xl font-bold text-primary">
+                    {property.currency}{property.price.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isRent ? "per year" : "one-time price"}
+                  </p>
+                </div>
+
+                {/* ✅ Move-In Cost Calculator — rent only */}
+                {isRent && (
+                  <div className="rounded-xl border bg-muted/50 p-4 space-y-2 text-sm">
+                    <p className="font-semibold text-sm">Estimated Move-In Cost</p>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Annual Rent</span>
+                        <span>{property.currency}{property.price.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Agency Fee (10%)</span>
+                        <span>{property.currency}{(property.price * 0.10).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Legal Fee (10%)</span>
+                        <span>{property.currency}{(property.price * 0.10).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Caution Deposit</span>
+                        <span>{property.currency}{(property.price * 0.05).toLocaleString()}</span>
+                      </div>
+                      <div className="border-t pt-2 flex justify-between font-bold text-foreground">
+                        <span>Total</span>
+                        <span>{property.currency}{(property.price * 1.25).toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Based on NIESV-approved fee caps</p>
+                  </div>
+                )}
+
+                {/* Booking Button */}
+                {isUnavailable ? (
+                  <Button className="w-full" size="lg" disabled>
+                    {isSold ? "Property Sold" : "Property Rented"}
+                  </Button>
+                ) : (
+                  <Button className="w-full" size="lg" asChild>
+                    <Link to={isAuthenticated ? `/book/${property.id}` : "/login"} className="flex">
+                      <Calendar className="mr-2 h-5 w-5" />
+                      {isRent ? "Book Inspection" : "Schedule Viewing"}
+                    </Link>
+                  </Button>
+                )}
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigator.clipboard.writeText(window.location.href)}
+                >
+                  <Share2 className="mr-2 h-4 w-4" /> Promote Listing
+                </Button>
+
+                <MessageButton
+                  propertyId={property.id}
+                  landlordId={property.landlordId}
+                  agentId={property.agentId}
+                />
+              </div>
+
+              <div className="sticky top-60 rounded-xl border bg-card p-6 shadow-sm">
+                <h3 className="font-semibold">Listed on</h3>
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  {new Date(property.createdAt).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </p>
               </div>
 
-              {isUnavailable ? (
-                <Button className="w-full" size="lg" disabled>
-                  {isSold ? "Property Sold" : "Property Rented"}
-                </Button>
-              ) : (
-                <Button className="w-full" size="lg" asChild>
-                  <Link to={isAuthenticated ? `/book/${property.id}` : "/login"} className="flex">
-                    <Calendar className="mr-2 h-5 w-5" />
-                    {isRent ? "Book Inspection" : "Schedule Viewing"}
-                  </Link>
-                </Button>
-              )}
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                }}
+              {/* Report Listing */}
+              <button
+                onClick={() => setReportOpen(true)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors mx-auto"
               >
-                <Share2 className="mr-2 h-4 w-4" /> Promote Listing
-              </Button>
+                <Flag className="h-3 w-3" />
+                Report this listing
+              </button>
+
+              {/* Report Modal */}
+              {reportOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                  <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">Report this listing</h3>
+                      <button onClick={() => setReportOpen(false)}>
+                        <X className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground">
+                      Help us keep Rentra safe. Select the reason for your report.
+                    </p>
+
+                    <div className="space-y-2">
+                      {[
+                        "Fake or duplicate listing",
+                        "Property doesn't match photos",
+                        "Agent charged illegal inspection fee",
+                        "Agent fee exceeds 10% NIESV cap",
+                        "Suspicious or fraudulent activity",
+                        "Property no longer available",
+                        "Other",
+                      ].map((reason) => (
+                        <button
+                          key={reason}
+                          onClick={() => setReportReason(reason)}
+                          className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition-colors ${reportReason === reason
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:bg-muted"
+                            }`}
+                        >
+                          {reason}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setReportOpen(false)}
+                        disabled={reportSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        onClick={handleReport}
+                        disabled={reportSubmitting || !reportReason}
+                      >
+                        {reportSubmitting
+                          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</>
+                          : "Submit Report"
+                        }
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -265,3 +470,89 @@ const PropertyDetail = () => {
 };
 
 export default PropertyDetail;
+
+type ToastOptions = {
+  title: string;
+  variant?: "default" | "destructive" | "success" | string;
+};
+
+function toast({ title, variant = "default" }: ToastOptions) {
+  if (typeof document === "undefined") return;
+
+  const containerId = "renta-toast-container";
+  let container = document.getElementById(containerId);
+
+  if (!container) {
+    container = document.createElement("div");
+    container.id = containerId;
+    container.style.position = "fixed";
+    container.style.top = "1rem";
+    container.style.right = "1rem";
+    container.style.zIndex = "9999";
+    container.style.display = "flex";
+    container.style.flexDirection = "column";
+    container.style.gap = "0.5rem";
+    document.body.appendChild(container);
+  }
+
+  const toastEl = document.createElement("div");
+  toastEl.textContent = title;
+  toastEl.style.padding = "0.85rem 1rem";
+  toastEl.style.borderRadius = "0.75rem";
+  toastEl.style.border = "1px solid transparent";
+  toastEl.style.boxShadow = "0 10px 30px rgba(15, 23, 42, 0.12)";
+  toastEl.style.maxWidth = "320px";
+  toastEl.style.fontSize = "0.95rem";
+  toastEl.style.lineHeight = "1.4";
+  toastEl.style.cursor = "pointer";
+  toastEl.style.transition = "transform 150ms ease, opacity 150ms ease";
+  toastEl.style.transform = "translateX(12px)";
+  toastEl.style.opacity = "0";
+
+  const styles = {
+    default: {
+      background: "#f8fafc",
+      borderColor: "#cbd5e1",
+      color: "#0f172a",
+    },
+    destructive: {
+      background: "#fee2e2",
+      borderColor: "#fecaca",
+      color: "#991b1b",
+    },
+    success: {
+      background: "#dcfce7",
+      borderColor: "#bbf7d0",
+      color: "#166534",
+    },
+  };
+
+  const variantStyles = styles[variant as keyof typeof styles] ?? styles.default;
+
+  toastEl.style.background = variantStyles.background;
+  toastEl.style.borderColor = variantStyles.borderColor;
+  toastEl.style.color = variantStyles.color;
+
+  toastEl.addEventListener("click", () => {
+    if (toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);
+  });
+
+  container.appendChild(toastEl);
+
+  requestAnimationFrame(() => {
+    toastEl.style.transform = "translateX(0)";
+    toastEl.style.opacity = "1";
+  });
+
+  window.setTimeout(() => {
+    toastEl.style.opacity = "0";
+    toastEl.style.transform = "translateX(12px)";
+    window.setTimeout(() => {
+      if (toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);
+      if (container && container.childElementCount === 0 && container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    }, 150);
+  }, 3200);
+}
+

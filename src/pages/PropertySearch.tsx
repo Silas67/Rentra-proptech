@@ -1,54 +1,81 @@
 import { useState, useMemo, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import PropertyCard from "@/components/PropertyCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Loader2 } from "lucide-react";
+import { Search, AlertCircle, RefreshCw } from "lucide-react";
 import { Property } from "@/lib/types";
 import { savedPropertyService } from "@/services/savedPropertyService";
 import { propertyService } from "@/services/propertyService";
+import { Button } from "@/components/ui/button";
+
+// 🦴 Single skeleton card
+const PropertyCardSkeleton = () => (
+  <div className="overflow-hidden rounded-xl border bg-card shadow-sm animate-pulse">
+    {/* Image placeholder */}
+    <div className="aspect-[4/3] bg-muted" />
+    <div className="p-4 space-y-3">
+      {/* Title */}
+      <div className="h-4 w-3/4 rounded bg-muted" />
+      {/* Location */}
+      <div className="h-3 w-1/2 rounded bg-muted" />
+      {/* Details row */}
+      <div className="flex gap-3">
+        <div className="h-3 w-16 rounded bg-muted" />
+        <div className="h-3 w-16 rounded bg-muted" />
+        <div className="h-3 w-16 rounded bg-muted ml-auto" />
+      </div>
+    </div>
+  </div>
+);
+
+// 🦴 Grid of skeleton cards
+const PropertySearchSkeleton = () => (
+  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <PropertyCardSkeleton key={i} />
+    ))}
+  </div>
+);
 
 const PropertySearch = () => {
   const { user, role } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
 
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
-  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [listingType, setListingType] = useState("all");
 
+  const fetchProperties = async () => {
+    setLoading(true);
+    setError(null);
 
-
-  useEffect(() => {
-    const fetchProperties = async () => {
-      setLoading(true);
-      setError(null);
-
-      const [properties, savedIds] = await Promise.all([
+    try {
+      const [fetchedProperties, fetchedSavedIds] = await Promise.all([
         propertyService.getProperties(),
-
         user && role === "tenant"
           ? savedPropertyService.getSavedPropertyIds(user.id)
           : Promise.resolve([]),
       ]);
 
-      if (!properties.length && !savedIds.length) {
-        setError("Failed to load properties. Please try again.");
-      } else {
-        setProperties(properties);
-        setSavedIds(savedIds);
-      }
+      setProperties(fetchedProperties);
+      setSavedIds(fetchedSavedIds);
+    } catch (err) {
+      console.error("Failed to fetch properties:", err);
+      setError("Failed to load properties. Please try again.");
+    }
 
-      setLoading(false);
-    };
+    setLoading(false);
+  };
 
+  useEffect(() => {
     fetchProperties();
-  }, []);
+  }, [user, role]);
 
-  // 🔎 Filter locally after fetch
   const filtered = useMemo(() => {
     return properties.filter((p) => {
       const matchQuery =
@@ -57,18 +84,21 @@ const PropertySearch = () => {
         p.location.toLowerCase().includes(query.toLowerCase()) ||
         p.city.toLowerCase().includes(query.toLowerCase());
       const matchType = type === "all" || p.type === type;
+      const matchListing = listingType === "all" || p.listingType === listingType;
       const matchPrice =
         priceRange === "all" ||
         (priceRange === "low" && p.price <= 2000000) ||
         (priceRange === "mid" && p.price > 2000000 && p.price <= 5000000) ||
         (priceRange === "high" && p.price > 5000000);
-      return matchQuery && matchType && matchPrice;
+      return matchQuery && matchType && matchListing && matchPrice;
     });
-  }, [properties, query, type, priceRange]);
+  }, [properties, query, type, priceRange, listingType]);
 
   return (
     <div className="min-h-screen pt-24 pb-6">
       <div className="container">
+
+        {/* Header */}
         <div className="mb-8 w-full text-center">
           <h1 className="font-display text-3xl font-bold text-forest-dark">Browse Properties</h1>
           <p className="text-muted-foreground">Find your next home now</p>
@@ -85,6 +115,14 @@ const PropertySearch = () => {
               className="pl-9"
             />
           </div>
+          <Select value={listingType} onValueChange={setListingType}>
+            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Listing" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">For Rent & Sale</SelectItem>
+              <SelectItem value="rent">For Rent</SelectItem>
+              <SelectItem value="sale">For Sale</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={type} onValueChange={setType}>
             <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Type" /></SelectTrigger>
             <SelectContent>
@@ -108,20 +146,32 @@ const PropertySearch = () => {
 
         {/* States */}
         {loading ? (
-          <div className="py-20 text-center text-muted-foreground">
-            <Loader2 className="mx-auto mb-3 h-10 w-10 animate-spin opacity-40" />
-            <p className="text-sm">Loading properties...</p>
-          </div>
+          <PropertySearchSkeleton />
         ) : error ? (
-          <div className="py-20 text-center text-destructive">
-            <p className="text-lg font-medium">{error}</p>
+          <div className="py-20 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+            </div>
+            <p className="text-lg font-medium text-destructive mb-2">{error}</p>
+            <Button variant="outline" onClick={fetchProperties} className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" /> Try Again
+            </Button>
           </div>
         ) : filtered.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((p) => (
-              <PropertyCard key={p.id} property={p} isSaved={savedIds.includes(p.id)} />
-            ))}
-          </div>
+          <>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {filtered.length} propert{filtered.length !== 1 ? "ies" : "y"} found
+            </p>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((p) => (
+                <PropertyCard
+                  key={p.id}
+                  property={p}
+                  isSaved={savedIds.includes(p.id)}
+                />
+              ))}
+            </div>
+          </>
         ) : (
           <div className="py-20 text-center text-muted-foreground">
             <Search className="mx-auto mb-3 h-10 w-10 opacity-40" />
@@ -129,6 +179,7 @@ const PropertySearch = () => {
             <p className="text-sm">Try adjusting your filters</p>
           </div>
         )}
+
       </div>
     </div>
   );
