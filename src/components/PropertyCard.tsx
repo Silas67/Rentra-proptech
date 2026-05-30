@@ -7,6 +7,7 @@ import { savedPropertyService } from "@/services/savedPropertyService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import VerificationBadge from "./VerificationBadge";
+import ListingFreshness from "./ListingFreshness";
 
 interface PropertyCardProps {
   property: Property;
@@ -132,6 +133,19 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
             <span className="flex items-center gap-1">
               <Bath className="h-3.5 w-3.5" /> {property.bathrooms} Bath
             </span>
+            {(property.hasGenerator || property.hasWater || property.hasSecurity) && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                {property.hasGenerator && <span title="Generator">⚡</span>}
+                {property.hasWater && <span title="Water Supply">💧</span>}
+                {property.hasSecurity && <span title="Security">🔒</span>}
+              </div>
+            )}
+            <div className="mt-1">
+              <ListingFreshness
+                lastVerifiedAt={property.lastVerifiedAt}
+                createdAt={property.createdAt}
+              />
+            </div>
             <span className="ml-auto">
               <VerificationBadge tier={property.verificationTier} />
             </span>

@@ -1,13 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import PropertyCard from "@/components/PropertyCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, AlertCircle, RefreshCw, Loader2 } from "lucide-react";
 import { Property } from "@/lib/types";
 import { savedPropertyService } from "@/services/savedPropertyService";
 import { propertyService } from "@/services/propertyService";
 import { Button } from "@/components/ui/button";
+import { savedSearchService } from "@/services/savedSearchService";
+import { Bell, BellOff, Bookmark } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 
 // 🦴 Single skeleton card
 const PropertyCardSkeleton = () => (
@@ -44,11 +48,34 @@ const PropertySearch = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
-
+  const [savingSearch, setSavingSearch] = useState(false);
+  const [savedSearches, setSavedSearches] = useState<any[]>([]);
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
   const [listingType, setListingType] = useState("all");
+
+  const handleSaveSearch = async () => {
+    if (!user) { navigate("/login"); return; }
+    setSavingSearch(true);
+
+    const label = [
+      query || "All properties",
+      type !== "all" ? type : null,
+      listingType !== "all" ? listingType : null,
+      priceRange !== "all" ? priceRange : null,
+    ].filter(Boolean).join(" · ");
+
+    const saved = await savedSearchService.saveSearch(user.id, label, {
+      query, type, listingType, priceRange,
+    });
+    if (saved) {
+      setSavedSearches((prev) => [saved, ...prev]);
+      toast({ title: "Search saved! We'll alert you when new matches appear ✓" });
+    }
+
+    setSavingSearch(false);
+  };
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -142,6 +169,20 @@ const PropertySearch = () => {
               <SelectItem value="high">Above ₦5M</SelectItem>
             </SelectContent>
           </Select>
+          {role === "tenant" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveSearch}
+              disabled={savingSearch}
+              className="shrink-0"
+            >
+              {savingSearch
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <><Bookmark className="mr-1.5 h-4 w-4" /> Save Search</>
+              }
+            </Button>
+          )}
         </div>
 
         {/* States */}

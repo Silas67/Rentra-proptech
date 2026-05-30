@@ -26,6 +26,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import AgentStorefront from "./pages/AgentStorefront";
 import Messages from "./pages/Messages";
+import Pricing from "./pages/pricing";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Landing />} />
                 <Route path="/book/:id" element={<BookInspection />} />
+                <Route path="/pricing" element={<Pricing />} />
               </Route>
 
               {/* Auth pages */}

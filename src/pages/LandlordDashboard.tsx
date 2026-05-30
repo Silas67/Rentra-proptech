@@ -1,12 +1,28 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, CheckCircle2, Clock, Home, Plus, Loader2 } from "lucide-react";
+import { Building2, CheckCircle2, Home, Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Property, Booking } from "@/lib/types";
 import AddPropertyModal from "@/sections/AddPropertyModal";
+import BoostButton from "@/components/BoostButton";
+import { ShieldCheck, Clock, X } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
+
+declare const PaystackPop: {
+  setup: (config: {
+    key: string;
+    email: string;
+    amount: number;
+    currency: string;
+    ref: string;
+    onSuccess: (transaction: { reference: string }) => void;
+    onCancel: () => void;
+  }) => { openIframe: () => void };
+};
 
 const LandlordDashboard = () => {
   const { user } = useAuth();
@@ -17,6 +33,9 @@ const LandlordDashboard = () => {
   const [loadingProperties, setLoadingProperties] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [unlockedTenants, setUnlockedTenants] = useState<string[]>([]);
+  const [selectedTenant, setSelectedTenant] = useState<any>(null);
+  const [loadingUnlock, setLoadingUnlock] = useState<string | null>(null);
 
   const available = properties.filter((p) => p.status === "available").length;
   const rented = properties.filter((p) => p.status === "rented").length;
@@ -57,6 +76,8 @@ const LandlordDashboard = () => {
           images: p.images ?? [],
           amenities: p.amenities ?? [],
           landlordId: p.landlord_id,
+          isBoosted: p.is_boosted ?? false,
+          boostExpiresAt: p.boost_expires_at ?? undefined,
           agentId: p.agent_id,
           createdAt: p.created_at,
         }));
@@ -92,10 +113,79 @@ const LandlordDashboard = () => {
       }
 
       setLoadingBookings(false);
+
+      const { data: unlocks } = await supabase
+        .from("verification_unlocks")
+        .select("tenant_id")
+        .eq("landlord_id", user.id);
+
+      setUnlockedTenants((unlocks ?? []).map((u: any) => u.tenant_id));
     };
 
     fetchBookings();
+
+
   }, [user, properties]);
+
+  const handleViewTenantProfile = async (booking: Booking) => {
+    if (!user) return;
+
+    // Already unlocked — fetch and show profile
+    if (unlockedTenants.includes(booking.tenantId)) {
+      const { data } = await supabase
+        .from("tenant_verifications")
+        .select("*")
+        .eq("tenant_id", booking.tenantId)
+        .maybeSingle();
+
+      setSelectedTenant({ ...data, tenantName: booking.tenantName, tenantEmail: booking.tenantEmail, tenantPhone: booking.tenantPhone });
+      return;
+    }
+
+    // Not unlocked — trigger payment
+    setLoadingUnlock(booking.id);
+
+    const handler = PaystackPop.setup({
+      key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+      email: user.email!,
+      amount: 250000, // ₦2,500 in kobo
+      currency: "NGN",
+      ref: `rentra_unlock_${Date.now()}`,
+      onSuccess: async (transaction) => {
+        await supabase.from("verification_unlocks").insert({
+          landlord_id: user.id,
+          tenant_id: booking.tenantId,
+          property_id: booking.propertyId,
+          paystack_reference: transaction.reference,
+        });
+
+        setUnlockedTenants((prev) => [...prev, booking.tenantId]);
+        setLoadingUnlock(null);
+
+        // Now fetch profile
+        const { data } = await supabase
+          .from("tenant_verifications")
+          .select("*")
+          .eq("tenant_id", booking.tenantId)
+          .maybeSingle();
+
+        if (!data) {
+          toast({ title: "This tenant hasn't verified their identity yet" });
+          return;
+        }
+
+        setSelectedTenant({
+          ...data,
+          tenantName: booking.tenantName,
+          tenantEmail: booking.tenantEmail,
+          tenantPhone: booking.tenantPhone,
+        });
+      },
+      onCancel: () => setLoadingUnlock(null),
+    });
+
+    handler.openIframe();
+  };
 
   const markRented = async (id: string) => {
     const { error } = await supabase
@@ -117,6 +207,19 @@ const LandlordDashboard = () => {
   const handlePropertyAdded = (property: Property) => {
     setProperties((prev) => [property, ...prev]);
   };
+
+  const handleRefreshListing = async (id: string) => {
+    const { error } = await supabase
+      .from("properties")
+      .update({ last_verified_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (!error) {
+      toast({ title: "Listing refreshed ✓" });
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen pt-24 pb-6">
@@ -172,6 +275,8 @@ const LandlordDashboard = () => {
             <div className="space-y-3">
               {properties.map((p) => (
                 <div key={p.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center">
+
+                  {/* Property Image */}
                   {p.images?.[0] ? (
                     <img src={p.images[0]} alt={p.title} className="h-20 w-28 rounded-lg object-cover shrink-0" />
                   ) : (
@@ -179,6 +284,8 @@ const LandlordDashboard = () => {
                       <Home className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
+
+                  {/* Property Details */}
                   <div className="flex-1">
                     <p className="font-medium">{p.title}</p>
                     <p className="text-sm text-muted-foreground">
@@ -186,6 +293,8 @@ const LandlordDashboard = () => {
                     </p>
                     <p className="text-xs text-muted-foreground">{p.bedrooms} bed · {p.bathrooms} bath · {p.type}</p>
                   </div>
+
+                  {/* Status and Actions */}
                   <div className="flex items-center gap-2">
                     <Badge variant={p.status === "available" ? "default" : "secondary"}>{p.status}</Badge>
                     {p.status === "available" && (
@@ -193,7 +302,23 @@ const LandlordDashboard = () => {
                         Mark Rented
                       </Button>
                     )}
+
                   </div>
+
+                  {/* Refresh Listing Button */}
+                  <Button variant="outline" size="sm" onClick={() => handleRefreshListing(p.id)}>
+                    Refresh Listing
+                  </Button>
+
+                  <BoostButton
+                    propertyId={p.id}
+                    isBoosted={p.isBoosted}
+                    onBoosted={() => {
+                      setProperties((prev) =>
+                        prev.map((prop) => prop.id === p.id ? { ...prop, isBoosted: true } : prop)
+                      );
+                    }}
+                  />
                 </div>
               ))}
             </div>
@@ -222,6 +347,19 @@ const LandlordDashboard = () => {
                       {b.tenantName} · {b.date} at {b.time} · {b.tenantPhone}
                     </p>
                     <Badge variant="secondary" className="mt-2">{b.status}</Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewTenantProfile(b)}
+                      disabled={loadingUnlock === b.id}
+                    >
+                      {loadingUnlock === b.id
+                        ? <Loader2 className="h-3 w-3 animate-spin" />
+                        : unlockedTenants.includes(b.tenantId)
+                          ? "View Profile"
+                          : "Verify Tenant ₦2,500"
+                      }
+                    </Button>
                   </div>
                 );
               })}
@@ -238,6 +376,72 @@ const LandlordDashboard = () => {
           onClose={() => setShowAddModal(false)}
           onAdded={handlePropertyAdded}
         />
+      )}
+
+
+      {selectedTenant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Tenant Profile</h3>
+              <button onClick={() => setSelectedTenant(null)}>
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                  {selectedTenant.tenantName?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-semibold">{selectedTenant.tenantName}</p>
+                  <p className="text-sm text-muted-foreground">{selectedTenant.tenantEmail}</p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border bg-muted/50 p-4 space-y-2 text-sm">
+                {selectedTenant.status === "verified" ? (
+                  <div className="flex items-center gap-2 text-green-600 font-medium">
+                    <ShieldCheck className="h-4 w-4" /> Identity Verified
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-yellow-600 font-medium">
+                    <Clock className="h-4 w-4" /> Verification Pending
+                  </div>
+                )}
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Full Name</span>
+                  <span className="font-medium text-foreground">{selectedTenant.full_name}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>ID Type</span>
+                  <span className="font-medium text-foreground uppercase">{selectedTenant.id_type}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Employment</span>
+                  <span className="font-medium text-foreground capitalize">
+                    {selectedTenant.employment_status?.replace("_", " ")}
+                  </span>
+                </div>
+                {selectedTenant.monthly_income && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Monthly Income</span>
+                    <span className="font-medium text-foreground">{selectedTenant.monthly_income}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Phone</span>
+                  <span className="font-medium text-foreground">{selectedTenant.tenantPhone}</span>
+                </div>
+              </div>
+            </div>
+
+            <Button className="w-full" onClick={() => setSelectedTenant(null)}>
+              Close
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

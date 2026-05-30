@@ -15,7 +15,8 @@ import {
   Eye, TrendingUp, Loader2, CheckCircle2, Clock,
   Plus, Minus, Link2, Copy, Store, Search,
   ShieldCheck, Shield, AlertCircle, BarChart2,
-  MousePointer, Calendar, ArrowUpRight
+  MousePointer, Calendar, ArrowUpRight,
+  DollarSign
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -23,6 +24,7 @@ import {
   ResponsiveContainer, CartesianGrid
 } from "recharts";
 import AgentCRM from "@/components/AgentCRM";
+import { commissionService } from "@/services/commissionService";
 
 const statusVariant = (status: Booking["status"]) => {
   switch (status) {
@@ -33,7 +35,7 @@ const statusVariant = (status: Booking["status"]) => {
   }
 };
 
-type Tab = "storefront" | "browse" | "bookings" | "analytics" | "crm" | "mypage" | "verification";
+type Tab = "storefront" | "browse" | "bookings" | "analytics" | "crm" | "mypage" | "verification" | "commission";
 type VerificationStatus = "none" | "pending" | "verified" | "rejected";
 
 const AgentDashboard = () => {
@@ -60,6 +62,8 @@ const AgentDashboard = () => {
   const [pageForm, setPageForm] = useState({ bio: "", videoUrl: "", areaTags: [] as string[] });
   const [savingPage, setSavingPage] = useState(false);
   const [loadingPage, setLoadingPage] = useState(false);
+  const [commissionSummary, setCommissionSummary] = useState<any>(null);
+  const [loadingCommission, setLoadingCommission] = useState(false);
 
   // Fetch promoted properties
   useEffect(() => {
@@ -76,6 +80,17 @@ const AgentDashboard = () => {
     };
     fetch();
   }, [user]);
+
+  useEffect(() => {
+    if (activeTab !== "commission" || !user || commissionSummary) return;
+    const fetch = async () => {
+      setLoadingCommission(true);
+      const summary = await commissionService.getSummary(user.id);
+      setCommissionSummary(summary);
+      setLoadingCommission(false);
+    };
+    fetch();
+  }, [activeTab, user]);
 
   // Fetch bookings
   useEffect(() => {
@@ -336,6 +351,7 @@ const AgentDashboard = () => {
             { key: "crm", label: "CRM", icon: TrendingUp },
             { key: "mypage", label: "My Page", icon: Store },
             { key: "verification", label: "Verification", icon: ShieldCheck },
+            { key: "commission", label: "Commission", icon: DollarSign },
           ] as { key: Tab; label: string; icon: any }[]).map((tab) => (
             <button
               key={tab.key}
@@ -484,7 +500,7 @@ const AgentDashboard = () => {
           </div>
         )}
 
-        {/* ── Analytics ── */}
+
         {activeTab === "analytics" && (
           <div>
             <h2 className="mb-2 font-display text-xl font-bold flex items-center gap-2">
@@ -792,6 +808,85 @@ const AgentDashboard = () => {
                     Your information is encrypted and only used for identity verification.
                   </p>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "commission" && (
+          <div>
+            <h2 className="mb-2 font-display text-xl font-bold flex items-center gap-2">
+              <DollarSign className="h-5 w-5" /> Commission Tracking
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Track deals closed through your Rentra storefront
+            </p>
+
+            {loadingCommission ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading...
+              </div>
+            ) : !commissionSummary || commissionSummary.totalDeals === 0 ? (
+              <div className="rounded-xl border border-dashed bg-card p-12 text-center text-muted-foreground">
+                <DollarSign className="mx-auto mb-3 h-10 w-10 opacity-30" />
+                <p className="font-medium">No commission records yet</p>
+                <p className="text-sm">When a booking you referred converts to a closed deal, it will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+
+                {/* Summary cards */}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {[
+                    { label: "Total Deals", value: commissionSummary.totalDeals, color: "text-primary" },
+                    { label: "Total Earned", value: `₦${(commissionSummary.totalEarned).toLocaleString()}`, color: "text-green-600" },
+                    { label: "Pending Deals", value: commissionSummary.pendingDeals, color: "text-yellow-600" },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-xl border bg-card p-5 shadow-sm">
+                      <p className="text-sm text-muted-foreground">{s.label}</p>
+                      <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Commission records */}
+                <div className="space-y-3">
+                  {commissionSummary.records.map((r: any) => (
+                    <div key={r.id} className="rounded-xl border bg-card p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium">{r.propertyTitle}</p>
+                          <p className="text-sm text-muted-foreground">{r.tenantName}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Deal value: ₦{r.dealValue?.toLocaleString()} ·
+                            Your commission: ₦{r.agentCommission?.toLocaleString()} ·
+                            Rentra fee: ₦{r.rentraCommission?.toLocaleString()}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium border ${r.status === "paid"
+                            ? "bg-green-50 text-green-600 border-green-200"
+                            : r.status === "disputed"
+                              ? "bg-destructive/10 text-destructive border-destructive/20"
+                              : "bg-yellow-50 text-yellow-600 border-yellow-200"
+                          }`}>
+                          {r.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Rentra fee notice */}
+                {commissionSummary.totalOwedToRentra > 0 && (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+                    <p className="font-medium">Rentra attribution fee due</p>
+                    <p className="text-muted-foreground mt-0.5">
+                      ₦{commissionSummary.totalOwedToRentra.toLocaleString()} owed for deals
+                      attributed to your storefront. Contact support to settle.
+                    </p>
+                  </div>
+                )}
+
               </div>
             )}
           </div>

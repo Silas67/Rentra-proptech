@@ -12,6 +12,7 @@ export interface User {
 }
 
 export interface Property {
+
   id: string;
   title: string;
   description: string;
@@ -24,6 +25,11 @@ export interface Property {
   address: string;
   bedrooms: number;
   bathrooms: number;
+  hasGenerator?: boolean;
+  hasWater?: boolean;
+  hasSecurity?: boolean;
+  powerHours?: number;
+  lastVerifiedAt?: string;
   type: "apartment" | "house" | "studio" | "duplex";
   status: "available" | "rented" | "sold" | "pending";
   verificationTier?: "self_listed" | "agent_verified" | "rentra_verified";
@@ -32,6 +38,9 @@ export interface Property {
   images: string[];
   landlordId: string;
   agentId?: string;
+  isBoosted?: boolean;
+  floorPlanUrl?: string;
+  boostExpiresAt?: string;
   amenities: string[];
   createdAt: string;
 }

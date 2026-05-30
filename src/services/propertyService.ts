@@ -20,9 +20,15 @@ const mapProperty = (p: Record<string, any>): Property => ({
   status: p.status,
   images: p.images ?? [],
   amenities: p.amenities ?? [],
+  hasGenerator: p.has_generator ?? false,
+  hasWater: p.has_water ?? false,
+  hasSecurity: p.has_security ?? false,
+  powerHours: p.power_hours ?? 0,
+  lastVerifiedAt: p.last_verified_at ?? p.created_at,
   landlordId: p.landlord_id,
   agentPhone: p.profiles?.phone ?? undefined,
   agentId: p.agent_id,
+  floorPlanUrl: p.floor_plan_url ?? undefined,
   createdAt: p.created_at,
   agencyFee: p.agency_fee ?? 10,
 });
@@ -43,6 +49,9 @@ export const propertyService = {
   // 📋 Get all available properties with optional filters
   async getProperties(filters: PropertyFilters = {}): Promise<Property[]> {
     let query = supabase.from("properties").select("*");
+
+    query = query.order("is_boosted", { ascending: false })
+      .order("created_at", { ascending: false });
 
     // Status filter — default to available only
     if (filters.status) {

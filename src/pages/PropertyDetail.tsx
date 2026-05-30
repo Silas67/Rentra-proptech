@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import MessageButton from "@/components/MessageButton";
 import VerificationBadge from "@/components/VerificationBadge";
 import { ShieldCheck } from "lucide-react";
+import ListingFreshness from "@/components/ListingFreshness";
 
 
 const PropertyDetail = () => {
@@ -215,6 +216,17 @@ const PropertyDetail = () => {
           )}
         </div>
 
+        {property.floorPlanUrl && (
+          <div className="mt-4">
+            <h3 className="mb-2 font-semibold">Floor Plan</h3>
+            <img
+              src={property.floorPlanUrl}
+              alt="Floor plan"
+              className="w-full rounded-xl border object-contain max-h-64"
+            />
+          </div>
+        )}
+
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2">
@@ -235,6 +247,13 @@ const PropertyDetail = () => {
               >
                 {property.status}
               </Badge>
+
+              // Below the status badge:
+              <ListingFreshness
+                lastVerifiedAt={property.lastVerifiedAt}
+                createdAt={property.createdAt}
+                size="md"
+              />
 
               <VerificationBadge tier={property.verificationTier} size="md" />
 
@@ -299,6 +318,31 @@ const PropertyDetail = () => {
                       <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> {a}
                     </span>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Utilities & Security */}
+            {(property.hasGenerator || property.hasWater || property.hasSecurity || property.powerHours) && (
+              <div className="mt-6">
+                <h2 className="mb-3 font-display text-xl font-bold">Utilities & Security</h2>
+                <div className="flex flex-wrap gap-3">
+                  {property.hasGenerator && (
+                    <div className="flex items-center gap-2 rounded-xl border bg-card px-4 py-2 text-sm">
+                      ⚡ Generator Available
+                      {property.powerHours ? ` · ${property.powerHours}hrs/day` : ""}
+                    </div>
+                  )}
+                  {property.hasWater && (
+                    <div className="flex items-center gap-2 rounded-xl border bg-card px-4 py-2 text-sm">
+                      💧 Water Supply
+                    </div>
+                  )}
+                  {property.hasSecurity && (
+                    <div className="flex items-center gap-2 rounded-xl border bg-card px-4 py-2 text-sm">
+                      🔒 Security
+                    </div>
+                  )}
                 </div>
               </div>
             )}
