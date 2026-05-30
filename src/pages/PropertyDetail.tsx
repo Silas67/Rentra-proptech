@@ -51,7 +51,29 @@ const PropertyDetail = () => {
         <p className="text-xs text-muted-foreground">Based on NIESV-approved fee caps</p>
       </div>
     );
+
   };
+
+  const [displayCurrency, setDisplayCurrency] = useState(property.currency);
+
+  // Approximate exchange rates — update periodically
+  const RATES: Record<string, number> = {
+    NGN: 1,
+    USD: 0.00065,  // 1 NGN = 0.00065 USD
+    GBP: 0.00051,
+    CAD: 0.00088,
+  };
+
+  const SYMBOLS: Record<string, string> = {
+    NGN: "₦", USD: "$", GBP: "£", CAD: "CA$",
+  };
+
+  const convertPrice = (price: number, from: string, to: string) => {
+    const inNGN = price / (RATES[from] ?? 1);
+    return Math.round(inNGN * (RATES[to] ?? 1));
+  };
+
+  const displayPrice = convertPrice(property.price, property.currency, displayCurrency);
 
   const handleReport = async () => {
     if (!user) { navigate("/login"); return; }
@@ -355,13 +377,28 @@ const PropertyDetail = () => {
                 <h3 className="font-semibold">Interested in this property?</h3>
 
                 {/* Price */}
-                <div className="rounded-lg bg-muted p-3 text-center">
+                <div className="rounded-lg bg-muted p-3 text-center space-y-2">
                   <p className="text-xl font-bold text-primary">
-                    {property.currency}{property.price.toLocaleString()}
+                    {SYMBOLS[displayCurrency]}{displayPrice.toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {isRent ? "per year" : "one-time price"}
                   </p>
+                  {/* Currency switcher */}
+                  <div className="flex justify-center gap-1 flex-wrap">
+                    {["NGN", "USD", "GBP", "CAD"].map((cur) => (
+                      <button
+                        key={cur}
+                        onClick={() => setDisplayCurrency(cur)}
+                        className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${displayCurrency === cur
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-background border hover:bg-muted"
+                          }`}
+                      >
+                        {cur}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* ✅ Move-In Cost Calculator — rent only */}
