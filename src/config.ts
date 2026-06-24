@@ -258,21 +258,32 @@ export const testimonialsConfig: TestimonialsConfig = {
       name: "Chioma Adeyemi",
       role: "Landlord, Lagos",
       image: "/testimonial-1.jpg",
-      quote: "Rentra helped me fill my vacant apartments in just 2 weeks. The agent network is incredible - my properties got exposure I never had before.",
+      quote:
+        "Rentra helped me fill my vacant apartments in just 2 weeks. The agent network is incredible - my properties got exposure I never had before.",
     },
     {
       id: 2,
       name: "Emmanuel Okafor",
       role: "Real Estate Agent, Abuja",
       image: "/testimonial-2.jpg",
-      quote: "As an agent, Rentra has transformed how I work. I can browse verified listings, share referral links, and track my commissions all in one place.",
+      quote:
+        "As an agent, Rentra has transformed how I work. I can browse verified listings, share referral links, and track my commissions all in one place.",
     },
     {
       id: 3,
       name: "Sarah Johnson",
       role: "Tenant, Port Harcourt",
       image: "/testimonial-3.jpg",
-      quote: "I found my dream apartment in 3 days. No more scrolling through WhatsApp statuses or getting ghosted by agents. Rentra just works.",
+      quote:
+        "I found my dream apartment in 3 days. No more scrolling through WhatsApp statuses or getting ghosted by agents. Rentra just works.",
+    },
+    {
+      id: 4,
+      name: "Chioma Adeyemi",
+      role: "Landlord, Lagos",
+      image: "/testimonial-1.jpg",
+      quote:
+        "Rentra helped me fill my vacant apartments in just 2 weeks. The agent network is incredible - my properties got exposure I never had before.",
     },
   ],
 };
