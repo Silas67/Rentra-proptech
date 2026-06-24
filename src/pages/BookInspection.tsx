@@ -13,6 +13,7 @@ import { crmService } from "@/services/crmService";
 import { Property } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 
+
 // Paystack inline type
 declare const PaystackPop: {
   setup: (config: {
