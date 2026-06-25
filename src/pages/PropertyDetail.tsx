@@ -54,7 +54,7 @@ const PropertyDetail = () => {
 
   };
 
-  const [displayCurrency, setDisplayCurrency] = useState(property.currency);
+  const [displayCurrency, setDisplayCurrency] = useState("NGN");
 
   // Approximate exchange rates — update periodically
   const RATES: Record<string, number> = {
@@ -73,7 +73,7 @@ const PropertyDetail = () => {
     return Math.round(inNGN * (RATES[to] ?? 1));
   };
 
-  const displayPrice = convertPrice(property.price, property.currency, displayCurrency);
+  const displayPrice = property ? convertPrice(property.price, property.currency, displayCurrency) : 0;
 
   const handleReport = async () => {
     if (!user) { navigate("/login"); return; }
@@ -270,7 +270,7 @@ const PropertyDetail = () => {
                 {property.status}
               </Badge>
 
-              // Below the status badge:
+              
               <ListingFreshness
                 lastVerifiedAt={property.lastVerifiedAt}
                 createdAt={property.createdAt}
