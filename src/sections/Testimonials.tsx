@@ -67,7 +67,10 @@ export function Testimonials() {
             </p>
           )}
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-sans font-bold text-softblack tracking-tight">
-            {testimonialsConfig.titleRegular} <span className="font-serif italic font-normal text-secondary">{testimonialsConfig.titleItalic}</span>
+            {testimonialsConfig.titleRegular}{" "}
+            <span className="font-serif italic font-normal text-secondary">
+              {testimonialsConfig.titleItalic}
+            </span>
           </h2>
         </div>
       </div>
@@ -75,16 +78,21 @@ export function Testimonials() {
       {/* Testimonials Carousel */}
       <div ref={carouselRef} className="relative opacity-0">
         <Swiper
-          modules={[Autoplay, FreeMode]}
+          // modules={FreeMode}
           spaceBetween={24}
           slidesPerView={1.2}
           centeredSlides={true}
-          loop={true}
+          // loop={true}
+          initialSlide={1} 
+          // onSwiper={(swiper) => {
+          //   
+          //   swiper.slideToLoop(0, 0);
+          // }}
           speed={800}
-          autoplay={{
-            delay: 4000,
-            disableOnInteraction: false,
-          }}
+          // autoplay={{
+          //   delay: 4000,
+          //   disableOnInteraction: false,
+          // }}
           breakpoints={{
             640: {
               slidesPerView: 1.5,
@@ -109,7 +117,10 @@ export function Testimonials() {
             <SwiperSlide key={testimonial.id}>
               <div className="group bg-offwhite rounded-lg p-8 md:p-10 h-full transition-all duration-500 hover:bg-forest-dark hover:text-white">
                 {/* Quote icon */}
-                <Quote className="w-10 h-10 text-softblack/10 group-hover:text-white/20 mb-6 transition-colors duration-500" strokeWidth={1} />
+                <Quote
+                  className="w-10 h-10 text-softblack/10 group-hover:text-white/20 mb-6 transition-colors duration-500"
+                  strokeWidth={1}
+                />
 
                 {/* Quote text */}
                 <p className="text-softblack/80 group-hover:text-white/90 font-body text-base md:text-lg leading-relaxed mb-8 transition-colors duration-500">

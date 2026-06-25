@@ -127,11 +127,15 @@ export function FeaturedProjects() {
   return (
     <section
       ref={sectionRef}
+      id="how-it-works"
       className="relative w-full py-24 md:py-32 bg-forest-dark"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         {/* Section Header */}
-        <div ref={headerRef} className="flex flex-col md:flex-row md:items-end md:justify-between mb-16 md:mb-20 opacity-0">
+        <div
+          ref={headerRef}
+          className="flex flex-col md:flex-row md:items-end md:justify-between mb-16 md:mb-20 opacity-0"
+        >
           <div>
             {featuredProjectsConfig.subtitle && (
               <p className="text-white/50 text-sm font-body uppercase tracking-widest mb-4">
@@ -139,12 +143,15 @@ export function FeaturedProjects() {
               </p>
             )}
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-sans font-bold text-white tracking-tight">
-              {featuredProjectsConfig.titleRegular} <span className="font-serif italic font-normal text-secondary">{featuredProjectsConfig.titleItalic}</span>
+              {featuredProjectsConfig.titleRegular}{" "}
+              <span className="font-serif italic font-normal text-secondary">
+                {featuredProjectsConfig.titleItalic}
+              </span>
             </h2>
           </div>
           {featuredProjectsConfig.viewAllText && (
             <a
-              href={featuredProjectsConfig.viewAllHref || '#contact'}
+              href={featuredProjectsConfig.viewAllHref || "#contact"}
               className="mt-6 md:mt-0 inline-flex items-center gap-2 text-white/70 hover:text-white font-body text-sm transition-colors duration-300 group"
             >
               {featuredProjectsConfig.viewAllText}
@@ -158,13 +165,15 @@ export function FeaturedProjects() {
           {featuredProjectsConfig.projects.map((project, index) => (
             <div
               key={project.id}
-              className={`project-card grid md:grid-cols-2 gap-8 md:gap-12 items-center ${index % 2 === 1 ? 'md:flex-row-reverse' : ''
-                }`}
+              className={`project-card grid md:grid-cols-2 gap-8 md:gap-12 items-center ${
+                index % 2 === 1 ? "md:flex-row-reverse" : ""
+              }`}
             >
               {/* Image with Viewfinder */}
               <div
-                className={`project-image-wrap relative overflow-hidden rounded-lg group cursor-pointer opacity-0 ${index % 2 === 1 ? 'md:order-2' : ''
-                  }`}
+                className={`project-image-wrap relative overflow-hidden rounded-lg group cursor-pointer opacity-0 ${
+                  index % 2 === 1 ? "md:order-2" : ""
+                }`}
               >
                 <div className="aspect-[4/3] overflow-hidden">
                   <img
@@ -193,11 +202,19 @@ export function FeaturedProjects() {
               </div>
 
               {/* Content */}
-              <div className={`project-content opacity-0 ${index % 2 === 1 ? 'md:order-1 md:text-right' : ''}`}>
-                <div className={`project-text-item flex items-center gap-3 mb-4 ${index % 2 === 1 ? 'md:justify-end' : ''}`}>
-                  <span className="text-white/50 font-body text-sm">{project.category}</span>
+              <div
+                className={`project-content opacity-0 ${index % 2 === 1 ? "md:order-1 md:text-right" : ""}`}
+              >
+                <div
+                  className={`project-text-item flex items-center gap-3 mb-4 ${index % 2 === 1 ? "md:justify-end" : ""}`}
+                >
+                  <span className="text-white/50 font-body text-sm">
+                    {project.category}
+                  </span>
                   <span className="w-1 h-1 rounded-full bg-white/30" />
-                  <span className="text-white/50 font-body text-sm">{project.year}</span>
+                  <span className="text-white/50 font-body text-sm">
+                    {project.year}
+                  </span>
                 </div>
                 <h3 className="project-text-item text-2xl md:text-3xl lg:text-4xl font-sans font-bold text-white tracking-tight mb-4">
                   {project.title}
@@ -208,8 +225,9 @@ export function FeaturedProjects() {
                 {featuredProjectsConfig.viewProjectText && (
                   <a
                     href="#contact"
-                    className={`project-text-item inline-flex items-center gap-2 text-white font-body text-sm border-b border-white/30 pb-1 hover:border-white transition-colors duration-300 group/link ${index % 2 === 1 ? 'md:flex-row-reverse' : ''
-                      }`}
+                    className={`project-text-item inline-flex items-center gap-2 text-white font-body text-sm border-b border-white/30 pb-1 hover:border-white transition-colors duration-300 group/link ${
+                      index % 2 === 1 ? "md:flex-row-reverse" : ""
+                    }`}
                   >
                     {featuredProjectsConfig.viewProjectText}
                     <ArrowUpRight className="w-4 h-4 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform duration-300" />

@@ -66,7 +66,10 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
   };
 
   return (
-    <Link to={`/property/${property.id}`} className="group block animate-fade-in">
+    <Link
+      to={`/property/${property.id}`}
+      className="group block animate-fade-in"
+    >
       <div className="overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
         <div className="relative aspect-[4/3] overflow-hidden">
           {property.images?.[0] ? (
@@ -82,13 +85,18 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
           )}
 
           {/* Status badge */}
-          <Badge className={`absolute left-3 top-3 ${statusColor} border-0 text-xs font-semibold`}>
+          <Badge
+            className={`absolute left-3 top-3 ${statusColor} border-0 text-xs font-semibold`}
+          >
             {property.status}
           </Badge>
 
           {/* Listing type badge */}
-          <Badge className={`absolute left-3 bottom-10 border-0 text-xs font-semibold ${isRent ? "bg-blue-500 text-white" : "bg-emerald-500 text-white"
-            }`}>
+          <Badge
+            className={`absolute left-3 bottom-10 border-0 text-xs font-semibold ${
+              isRent ? "bg-blue-500 text-white" : "bg-emerald-500 text-white"
+            }`}
+          >
             {isRent ? "For Rent" : "For Sale"}
           </Badge>
 
@@ -97,10 +105,11 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
             <button
               onClick={handleSaveToggle}
               disabled={savingId}
-              className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full transition-all ${saved
-                ? "bg-red-500 text-white shadow-md"
-                : "bg-white/80 text-gray-500 hover:bg-white hover:text-red-500 backdrop-blur-sm"
-                }`}
+              className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+                saved
+                  ? "bg-red-500 text-white shadow-md"
+                  : "bg-white/80 text-gray-500 hover:bg-white hover:text-red-500 backdrop-blur-sm"
+              }`}
             >
               <Heart className={`h-4 w-4 ${saved ? "fill-current" : ""}`} />
             </button>
@@ -109,7 +118,8 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
           {/* Price badge */}
           <div className="absolute bottom-3 left-3">
             <span className="rounded-md bg-foreground/80 px-2.5 py-1 text-sm font-bold text-background backdrop-blur-sm">
-              {property.currency}{property.price.toLocaleString()}
+              {property.currency}
+              {property.price.toLocaleString()}
               <span className="text-xs font-normal opacity-80">
                 {isRent ? "/yr" : " for sale"}
               </span>
@@ -126,32 +136,39 @@ const PropertyCard = ({ property, isSaved = false, onSaveToggle }: PropertyCardP
             {property.location}, {property.city}
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Bed className="h-3.5 w-3.5" /> {property.bedrooms} Bed
-            </span>
-            <span className="flex items-center gap-1">
-              <Bath className="h-3.5 w-3.5" /> {property.bathrooms} Bath
-            </span>
-            {(property.hasGenerator || property.hasWater || property.hasSecurity) && (
-              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                {property.hasGenerator && <span title="Generator">⚡</span>}
-                {property.hasWater && <span title="Water Supply">💧</span>}
-                {property.hasSecurity && <span title="Security">🔒</span>}
+          <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            {/* Row 1: Beds, Baths + badges pushed right */}
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1">
+                <Bed className="h-3.5 w-3.5" /> {property.bedrooms} Bed
+              </span>
+              <span className="flex items-center gap-1">
+                <Bath className="h-3.5 w-3.5" /> {property.bathrooms} Bath
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <VerificationBadge tier={property.verificationTier} />
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize">
+                  {property.type}
+                </span>
               </div>
-            )}
-            <div className="mt-1">
+            </div>
+
+            {/* Row 2: Amenities + Freshness */}
+            <div className="flex items-center gap-3 text-xs">
+              {(property.hasGenerator ||
+                property.hasWater ||
+                property.hasSecurity) && (
+                <div className="flex items-center gap-1.5">
+                  {property.hasGenerator && <span title="Generator">⚡</span>}
+                  {property.hasWater && <span title="Water Supply">💧</span>}
+                  {property.hasSecurity && <span title="Security">🔒</span>}
+                </div>
+              )}
               <ListingFreshness
                 lastVerifiedAt={property.lastVerifiedAt}
                 createdAt={property.createdAt}
               />
             </div>
-            <span className="ml-auto">
-              <VerificationBadge tier={property.verificationTier} />
-            </span>
-            <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize">
-              {property.type}
-            </span>
           </div>
         </div>
       </div>
