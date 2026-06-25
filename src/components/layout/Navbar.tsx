@@ -40,13 +40,12 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-40 px-6 py-2 flex items-center justify-between transition-all duration-500
-    ${
-      scrolled
-        ? "backdrop-blur-md bg-black/30 border-b border-white/10 shadow-sm"
-        : "bg-transparent border-transparent"
+  className={`fixed top-0 left-0 right-0 z-40 px-6 py-2 flex items-center justify-between transition-all duration-500
+    ${scrolled
+      ? "backdrop-blur-md bg-black/30 border-b border-white/10 shadow-sm"
+      : "bg-transparent border-transparent"
     }`}
-    >
+>
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
@@ -135,53 +134,94 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu */}
-      {mobileOpen && (
-        <div className="border-t bg-card p-4 md:hidden absolute w-full left-0 top-16">
-          <div className="flex flex-col gap-3">
-            <Link
-              to="/search"
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-              onClick={() => setMobileOpen(false)}
-            >
-              <Search className="h-4 w-4" />
-              Browse Properties
-            </Link>
+{mobileOpen && (
+  <div
+    className={`md:hidden absolute w-full left-0 top-16 border-t border-white/10 p-4
+      ${scrolled ? "bg-black/60 backdrop-blur-md" : "bg-black/40 backdrop-blur-sm"}`}
+  >
+    <div className="flex flex-col gap-1">
 
-            {isAuthenticated ? (
-              <>
-                <button
-                  onClick={() => {
-                    logout();
-                    setMobileOpen(false);
-                  }}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-muted"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Log out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+      {/* Nav Links from heroConfig */}
+      {heroConfig.navLinks.map((link) => (
+        <div key={link.label}>
+          <a
+            href={link.href}
+            className="flex items-center rounded-md px-3 py-2.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            onClick={() => setMobileOpen(false)}
+          >
+            {link.label}
+          </a>
+
+          {/* Submenu items if any */}
+          {link.submenu && (
+            <div className="ml-4 flex flex-col gap-1 border-l border-white/10 pl-3 mt-1 mb-1">
+              {link.submenu.map((sub) => (
+                <a
+                  key={sub.label}
+                  href={sub.href}
+                  className="rounded-md px-3 py-2 text-sm text-white/60 hover:text-white hover:bg-white/10 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
-                  Log in
-                </Link>
+                  {sub.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
 
-                <Link
-                  to="/signup"
-                  className="rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Sign up
-                </Link>
-              </>
-            )}
-          </div>
+      {/* Divider */}
+      <div className="my-2 h-px bg-white/10" />
+
+      {/* Browse Properties */}
+      <Link
+        to="/listings"
+        className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+        onClick={() => setMobileOpen(false)}
+      >
+        <Search className="h-4 w-4" />
+        Browse Properties
+      </Link>
+
+      {/* Auth */}
+      {isAuthenticated ? (
+        <>
+          <button
+            onClick={() => { goToDashboard(); setMobileOpen(false); }}
+            className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => { logout(); setMobileOpen(false); }}
+            className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-white/10 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Log out
+          </button>
+        </>
+      ) : (
+        <div className="flex flex-col gap-2 mt-1">
+          <Link
+            to="/login"
+            className="rounded-md px-3 py-2.5 text-center text-sm font-medium text-white/80 border border-white/20 hover:bg-white/10 transition-colors"
+            onClick={() => setMobileOpen(false)}
+          >
+            Log in
+          </Link>
+          <Link
+            to="/signup"
+            className="rounded-md bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            onClick={() => setMobileOpen(false)}
+          >
+            Sign up
+          </Link>
         </div>
       )}
+
+    </div>
+  </div>
+)}
     </nav>
   );
 };
