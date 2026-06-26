@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { bookingService } from "@/services/bookingService";
 import { savedPropertyService } from "@/services/savedPropertyService";
 import { propertyService } from "@/services/propertyService";
-import { savedSearchService, SavedSearch } from "@/services/savedSearchService";
+
 import { Booking, Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import PropertyCard from "@/components/PropertyCard";
 import {
   Calendar, Search, Home, Loader2, Clock, CheckCircle2,
-  XCircle, Heart, ShieldCheck, Bell, BellOff, Bookmark, Trash2
+  XCircle, Heart, ShieldCheck,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/lib/supabase";
@@ -82,10 +82,8 @@ const TenantDashboard = () => {
   const [bookingProperties, setBookingProperties] = useState<Record<string, Property>>({});
   const [savedProperties, setSavedProperties] = useState<Property[]>([]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
   const [loadingSaved, setLoadingSaved] = useState(true);
-  const [loadingSearches, setLoadingSearches] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   // KYC
@@ -106,26 +104,23 @@ const TenantDashboard = () => {
     const fetch = async () => {
       setLoadingBookings(true);
       setLoadingSaved(true);
-      setLoadingSearches(true);
       setLoadingKyc(true);
 
       // ✅ All fetched in parallel including KYC
-      const [bookingsData, savedPropertiesData, savedIdsData, searchesData, kycRes] = await Promise.all([
+      const [bookingsData, savedPropertiesData, savedIdsData, kycRes] = await Promise.all([
         bookingService.getTenantBookings(user.id),
         savedPropertyService.getSavedProperties(user.id),
         savedPropertyService.getSavedPropertyIds(user.id),
-        savedSearchService.getSavedSearches(user.id),
         supabase
           .from("tenant_verifications")
           .select("status, id_type, id_number, full_name, employment_status, monthly_income")
           .eq("tenant_id", user.id)
           .maybeSingle(),
       ]);
-
       setBookings(bookingsData);
       setSavedProperties(savedPropertiesData);
       setSavedIds(savedIdsData);
-      setSavedSearches(searchesData);
+     
 
       // KYC status
       if (kycRes.data) {
@@ -141,7 +136,6 @@ const TenantDashboard = () => {
 
       setLoadingBookings(false);
       setLoadingSaved(false);
-      setLoadingSearches(false);
       setLoadingKyc(false);
 
       // Fetch property details for bookings
@@ -337,7 +331,6 @@ const TenantDashboard = () => {
                 <PropertyCard
                   key={p.id}
                   property={p}
-                  savedIds={savedIds}
                   onSaveToggle={handleSaveToggle}
                 />
               ))}
@@ -345,63 +338,6 @@ const TenantDashboard = () => {
           )}
         </div>
 
-        {/* Saved Searches */}
-        {savedSearches.length > 0 && (
-          <div className="mb-8">
-            <h2 className="mb-4 font-display text-xl font-bold flex items-center gap-2">
-              <Bookmark className="h-5 w-5" /> Saved Searches
-            </h2>
-
-            {loadingSearches ? (
-              <div className="space-y-3">
-                {[1, 2].map((i) => <Sk key={i} className="h-14 w-full rounded-xl" />)}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {savedSearches.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between rounded-xl border bg-card p-4">
-                    <div>
-                      <p className="font-medium text-sm">{s.label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {s.alertEnabled ? "🔔 Alerts on" : "🔕 Alerts off"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={async () => {
-                          await savedSearchService.toggleAlert(s.id, !s.alertEnabled);
-                          setSavedSearches((prev) =>
-                            prev.map((search) =>
-                              search.id === s.id ? { ...search, alertEnabled: !search.alertEnabled } : search
-                            )
-                          );
-                        }}
-                      >
-                        {s.alertEnabled
-                          ? <Bell className="h-4 w-4 text-primary" />
-                          : <BellOff className="h-4 w-4 text-muted-foreground" />
-                        }
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={async () => {
-                          await savedSearchService.deleteSearch(s.id);
-                          setSavedSearches((prev) => prev.filter((search) => search.id !== s.id));
-                          toast.success("Search removed");
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Identity Verification */}
         <div className="mb-8">

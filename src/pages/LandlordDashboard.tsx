@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, CheckCircle2, Home, Plus, Clock, X, ShieldCheck, RefreshCw } from "lucide-react";
 import { Property, Booking } from "@/lib/types";
 import AddPropertyModal from "@/sections/AddPropertyModal";
+import EditPropertyModal from "@/components/EditPropertyModal";
 import BoostButton from "@/components/BoostButton";
 import { toast } from "@/components/ui/sonner";
 import { Loader2 } from "lucide-react";
@@ -72,6 +73,7 @@ const LandlordDashboard = () => {
   const [loadingUnlock, setLoadingUnlock] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
   const available = properties.filter((p) => p.status === "available").length;
   const rented = properties.filter((p) => p.status === "rented").length;
@@ -264,6 +266,10 @@ const LandlordDashboard = () => {
     setProperties((prev) => [property, ...prev]);
   };
 
+  const handlePropertyUpdated = (updated: Property) => {
+    setProperties((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+  };
+
   return (
     <div className="min-h-screen pt-24 pb-6">
       <div className="container">
@@ -367,6 +373,14 @@ const LandlordDashboard = () => {
                       }
                     </Button>
 
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingProperty(p)}
+                    >
+                      Edit
+                    </Button>
+
                     <BoostButton
                       propertyId={p.id}
                       isBoosted={p.isBoosted}
@@ -436,6 +450,15 @@ const LandlordDashboard = () => {
         </div>
 
       </div>
+
+      {/* Edit Property Modal */}
+      {editingProperty && (
+        <EditPropertyModal
+          property={editingProperty}
+          onClose={() => setEditingProperty(null)}
+          onUpdated={handlePropertyUpdated}
+        />
+      )}
 
       {/* Add Property Modal */}
       {showAddModal && (
