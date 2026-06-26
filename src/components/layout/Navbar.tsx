@@ -31,12 +31,7 @@ const Navbar = () => {
     return navigate("/onboarding");
   };
 
-  if (loading)
-    return (
-      <div className="flex items-center justify-center h-16 bg-forest-dark">
-        Loading...
-      </div>
-    );
+  
 
   return (
     <nav
