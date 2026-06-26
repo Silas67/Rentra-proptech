@@ -26,7 +26,7 @@ const mapProperty = (p: Record<string, any>): Property => ({
   powerHours: p.power_hours ?? 0,
   lastVerifiedAt: p.last_verified_at ?? p.created_at,
   landlordId: p.landlord_id,
-  agentPhone: p.profiles?.phone ?? undefined,
+  agentPhone: p.agentPhone ?? undefined,
   agentId: p.agent_id,
   floorPlanUrl: p.floor_plan_url ?? undefined,
   createdAt: p.created_at,
@@ -111,7 +111,7 @@ export const propertyService = {
   async getPropertyById(id: string): Promise<Property | null> {
     const { data, error } = await supabase
       .from("properties")
-      .select("*, profiles!agent_id(phone)")
+      .select("*")
       .eq("id", id)
       .single();
 
@@ -120,7 +120,18 @@ export const propertyService = {
       return null;
     }
 
-    return mapProperty(data);
+    // Fetch agent phone separately — avoids broken foreign key join
+    let agentPhone: string | undefined = undefined;
+    if (data.agent_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("id", data.agent_id)
+        .maybeSingle();
+      agentPhone = profile?.phone ?? undefined;
+    }
+
+    return mapProperty({ ...data, agentPhone });
   },
 
   // 🏠 Get all properties belonging to a landlord
