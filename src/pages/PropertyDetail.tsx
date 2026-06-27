@@ -270,11 +270,10 @@ const PropertyDetail = () => {
                 {property.status}
               </Badge>
 
-              // Below the status badge:
               <ListingFreshness
                 lastVerifiedAt={property.lastVerifiedAt}
                 createdAt={property.createdAt}
-                size="md"
+                size="md" 
               />
 
               <VerificationBadge tier={property.verificationTier} size="md" />
