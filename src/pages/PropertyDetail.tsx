@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import MessageButton from "@/components/MessageButton";
 import { ShieldCheck } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import VerificationBadge from "@/components/VerificationBadge";
+import ListingFreshness from "@/components/ListingFreshness";
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 const Skeleton = ({ className }: { className?: string }) => (
@@ -271,13 +273,22 @@ const PropertyDetail = () => {
                 {property.hasWater && <Badge variant="outline">💧 Water</Badge>}
                 {property.hasSecurity && <Badge variant="outline">🔒 Security</Badge>}
               </div>
-              <h1 className="font-display text-2xl font-bold md:text-3xl">{property.title}</h1>
-              <p className="mt-1 flex items-center gap-1 text-muted-foreground">
-                <MapPin className="h-4 w-4 shrink-0" />
-                {property.address ?? property.location}, {property.city}, {property.state}
-              </p>
 
-              {/* NIESV ribbon */}
+              <Badge
+                variant={property.status === "available" ? "default" : "destructive"}
+                className="text-sm capitalize"
+              >
+                {property.status}
+              </Badge>
+
+              <ListingFreshness
+                lastVerifiedAt={property.lastVerifiedAt}
+                createdAt={property.createdAt}
+                size="md"
+              />
+
+              <VerificationBadge tier={property.verificationTier} size="md" />
+
               {property.agencyFee !== undefined && (
                 property.agencyFee <= 10 ? (
                   <div className="mt-2 flex items-center gap-1.5 w-fit rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs text-green-700 font-medium">
