@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import MessageButton from "@/components/MessageButton";
 import { ShieldCheck } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import VerificationBadge from "@/components/VerificationBadge";
+import ListingFreshness from "@/components/ListingFreshness";
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 const Skeleton = ({ className }: { className?: string }) => (
@@ -279,7 +281,6 @@ const PropertyDetail = () => {
                 {property.status}
               </Badge>
 
-              // Below the status badge:
               <ListingFreshness
                 lastVerifiedAt={property.lastVerifiedAt}
                 createdAt={property.createdAt}
