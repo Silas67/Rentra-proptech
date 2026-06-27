@@ -11,7 +11,7 @@ type User = {
   phone?: string;
 };
 
-export type UserRole = "tenant" | "agent" | "landlord";
+export type UserRole = "tenant" | "agent" | "landlord" | "surveyor" | "lawyer";
 
 type AuthContextType = {
   user: User | null;

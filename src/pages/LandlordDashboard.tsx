@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ const BookingsSkeleton = () => (
 
 const LandlordDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -379,6 +381,14 @@ const LandlordDashboard = () => {
                       onClick={() => setEditingProperty(p)}
                     >
                       Edit
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/property-verification/${p.id}`)}
+                    >
+                      Verify
                     </Button>
 
                     <BoostButton

@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext"
 
 type Props = {
     children: React.ReactNode
-    allowedRoles?: ("tenant" | "agent" | "landlord")[]
+    allowedRoles?: ("tenant" | "agent" | "landlord" | "surveyor" | "lawyer")[]
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: Props) => {
@@ -23,6 +23,8 @@ const ProtectedRoute = ({ children, allowedRoles }: Props) => {
         if (role === "agent") return <Navigate to="/agent-dashboard" replace />
         if (role === "landlord") return <Navigate to="/landlord-dashboard" replace />
         if (role === "tenant") return <Navigate to="/search" replace />
+        if (role === "surveyor") return <Navigate to="/surveyor-dashboard" replace />
+        if (role === "lawyer") return <Navigate to="/lawyer-dashboard" replace />
     }
 
     return <>{children}</>

@@ -28,6 +28,9 @@ import AgentStorefront from "./pages/AgentStorefront";
 import Messages from "./pages/Messages";
 import Pricing from "./pages/pricing";
 import AuthCallback from "./pages/AuthCallback";
+import VerificationDetail from "@/pages/verification/VerificationDetail";
+import SurveyorDashboard from "@/pages/SurveyorDashboard";
+import LawyerDashboard from "@/pages/LawyerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +96,30 @@ const App = () => (
                   }
                 />
                 <Route path="/book-inspection" element={<BookInspection />} />
+                <Route
+                  path="/property-verification/:propertyId"
+                  element={
+                    <ProtectedRoute allowedRoles={["agent", "landlord", "surveyor", "lawyer"]}>
+                      <VerificationDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/surveyor-dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={["surveyor"]}>
+                      <SurveyorDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/lawyer-dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={["lawyer"]}>
+                      <LawyerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
 
               <Route

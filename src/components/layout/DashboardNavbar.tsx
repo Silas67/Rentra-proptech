@@ -16,7 +16,12 @@ const DashboardNavbar = () => {
 
   const displayName = user?.name || user?.email?.split("@")[0] || "User";
 
-  const roleLabel = role === "agent" ? "Agent" : role === "landlord" ? "Landlord" : "Tenant";
+  const roleLabel =
+    role === "agent" ? "Agent"
+    : role === "landlord" ? "Landlord"
+    : role === "surveyor" ? "Surveyor"
+    : role === "lawyer" ? "Lawyer"
+    : "Tenant";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 border-b bg-card/95 backdrop-blur-sm">
