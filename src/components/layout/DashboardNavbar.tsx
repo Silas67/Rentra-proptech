@@ -1,13 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, Menu, X, Bell, Home, Search } from "lucide-react";
-import { useState } from "react";
+import { LogOut, Menu, X, Bell, Home, Search, MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
 import { heroConfig } from "@/config";
+import { messagingService } from "@/services/messagingService";
 
 const DashboardNavbar = () => {
   const { user, logout, role } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Get initials from name
   const initials = user?.name
@@ -17,6 +19,18 @@ const DashboardNavbar = () => {
   const displayName = user?.name || user?.email?.split("@")[0] || "User";
 
   const roleLabel = role === "agent" ? "Agent" : role === "landlord" ? "Landlord" : "Tenant";
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUnread = async () => {
+      const count = await messagingService.getUnreadCount(user.id);
+      setUnreadCount(count);
+    };
+    fetchUnread();
+    // Poll every 30 seconds for new messages
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 border-b bg-card/95 backdrop-blur-sm">
@@ -49,6 +63,20 @@ const DashboardNavbar = () => {
           >
             <Search className="h-4 w-4" />
             <span className="hidden lg:block">Browse</span>
+          </Link>
+
+          {/* Messages */}
+          <Link
+            to="/messages"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted transition-colors"
+            title="Messages"
+          >
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </Link>
 
           {/* Notifications — placeholder */}
@@ -110,6 +138,22 @@ const DashboardNavbar = () => {
             >
               <Search className="h-4 w-4" />
               Browse Properties
+            </Link>
+
+            <Link
+              to="/messages"
+              className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Messages
+              </div>
+              {unreadCount > 0 && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </Link>
 
             <button

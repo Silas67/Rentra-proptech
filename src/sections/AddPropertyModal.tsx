@@ -26,11 +26,106 @@ const AMENITIES_OPTIONS = [
   "Balcony",
 ];
 
+const NIGERIAN_STATES = [
+  "Abia",
+  "Adamawa",
+  "Akwa Ibom",
+  "Anambra",
+  "Bauchi",
+  "Bayelsa",
+  "Benue",
+  "Borno",
+  "Cross River",
+  "Delta",
+  "Ebonyi",
+  "Edo",
+  "Ekiti",
+  "Enugu",
+  "FCT - Abuja",
+  "Gombe",
+  "Imo",
+  "Jigawa",
+  "Kaduna",
+  "Kano",
+  "Katsina",
+  "Kebbi",
+  "Kogi",
+  "Kwara",
+  "Lagos",
+  "Nasarawa",
+  "Niger",
+  "Ogun",
+  "Ondo",
+  "Osun",
+  "Oyo",
+  "Plateau",
+  "Rivers",
+  "Sokoto",
+  "Taraba",
+  "Yobe",
+  "Zamfara",
+];
+
+const CITIES_BY_STATE: Record<string, string[]> = {
+  "FCT - Abuja": ["Abuja", "Gwagwalada", "Kuje", "Bwari", "Kwali", "Abaji"],
+  Lagos: [
+    "Lagos Island",
+    "Lagos Mainland",
+    "Ikeja",
+    "Lekki",
+    "Ajah",
+    "Ikorodu",
+    "Epe",
+    "Badagry",
+  ],
+  Rivers: ["Port Harcourt", "Obio-Akpor", "Ikwerre", "Eleme"],
+  Kano: ["Kano Municipal", "Fagge", "Dala", "Gwale", "Nassarawa"],
+  Kaduna: ["Kaduna North", "Kaduna South", "Chikun", "Igabi"],
+  Oyo: ["Ibadan North", "Ibadan South", "Ogbomoso", "Oyo"],
+  Enugu: ["Enugu North", "Enugu South", "Enugu East"],
+  Delta: ["Asaba", "Warri", "Effurun", "Sapele"],
+  Edo: ["Benin City", "Auchi", "Ekpoma"],
+  Anambra: ["Awka", "Onitsha", "Nnewi", "Ekwulobia"],
+};
+
+const AREAS_BY_CITY: Record<string, string[]> = {
+  Abuja: [
+    "Maitama",
+    "Asokoro",
+    "Wuse",
+    "Wuse 2",
+    "Garki",
+    "Jabi",
+    "Utako",
+    "Gwarinpa",
+    "Kado",
+    "Katampe",
+    "Life Camp",
+    "Lugbe",
+    "Kubwa",
+    "Lokogoma",
+    "Apo",
+    "Dawaki",
+    "Gaduwa",
+    "Gudu",
+    "Wuye",
+  ],
+  "Lagos Island": ["Victoria Island", "Ikoyi", "Lagos Island", "Onikan"],
+  Lekki: ["Lekki Phase 1", "Lekki Phase 2", "Chevron", "Ikate", "Jakande"],
+  Ikeja: ["GRA Ikeja", "Maryland", "Oregun", "Allen Avenue", "Alausa"],
+  "Port Harcourt": [
+    "GRA Phase 1",
+    "GRA Phase 2",
+    "Old GRA",
+    "Rumuola",
+    "D/Line",
+  ],
+};
+
 const AddPropertyModal = ({ onClose, onAdded }: AddPropertyModalProps) => {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const floorPlanRef = useRef<HTMLInputElement>(null);
-
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -144,6 +239,13 @@ Write only the description, no title or labels.`,
       preview: URL.createObjectURL(file),
     }));
 
+    const oversized = files.filter((f) => f.size > 2 * 1024 * 1024); // 2MB
+    if (oversized.length > 0) {
+      toast.error(
+        `${oversized.length} image(s) are over 2MB — uploads may be slow on mobile`,
+      );
+    }
+
     setImageFiles((prev) => [...prev, ...selected]);
   };
 
@@ -172,36 +274,72 @@ Write only the description, no title or labels.`,
     });
   };
 
-  // ☁️ Upload images to Supabase Storage
+  // 🗜️ Compress image before upload
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 800; // smaller = faster upload
+        let { width, height } = img;
+        if (width > MAX) {
+          height = Math.round((height * MAX) / width);
+          width = MAX;
+        }
+        if (height > MAX) {
+          width = Math.round((width * MAX) / height);
+          height = MAX;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => resolve(blob!), "image/webp", 0.75);
+      };
+    });
+  };
+
+  // ☁️ Upload all images in parallel with compression
   const uploadImages = async (): Promise<string[]> => {
     if (!imageFiles.length) return uploadedUrls;
 
     setUploadingImages(true);
-    const urls: string[] = [...uploadedUrls];
 
-    for (const { file } of imageFiles) {
-      const ext = file.name.split(".").pop();
-      const fileName = `${user!.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const results = await Promise.all(
+      imageFiles.map(async ({ file }) => {
+        try {
+          const compressed = await compressImage(file);
+          const ext = "jpg";
+          const fileName = `${user!.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-      const { error } = await supabase.storage
-        .from("property-images")
-        .upload(fileName, file, { cacheControl: "3600", upsert: false });
+          const { error } = await supabase.storage
+            .from("property-images")
+            .upload(fileName, compressed, {
+              cacheControl: "3600",
+              upsert: false,
+            });
 
-      if (error) {
-        console.error("Image upload error:", error);
-        toast.error(`Failed to upload ${file.name}`);
-        continue;
-      }
+          if (error) {
+            toast.error(`Failed to upload ${file.name}`);
+            return null;
+          }
 
-      const { data: urlData } = supabase.storage
-        .from("property-images")
-        .getPublicUrl(fileName);
+          const { data: urlData } = supabase.storage
+            .from("property-images")
+            .getPublicUrl(fileName);
 
-      urls.push(urlData.publicUrl);
-    }
+          return urlData.publicUrl;
+        } catch {
+          toast.error(`Failed to upload ${file.name}`);
+          return null;
+        }
+      }),
+    );
 
     setUploadingImages(false);
-    return urls;
+
+    const newUrls = results.filter(Boolean) as string[];
+    return [...uploadedUrls, ...newUrls];
   };
 
   // 🏠 Floor plan upload
@@ -211,7 +349,11 @@ Write only the description, no title or labels.`,
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    setUploadingFloorPlan(true); // ✅ show loading
+    // ✅ Show local preview instantly — don't wait for upload
+    const localPreview = URL.createObjectURL(file);
+    setForm((p) => ({ ...p, floorPlanUrl: localPreview }));
+    setUploadingFloorPlan(true);
+
     const ext = file.name.split(".").pop();
     const fileName = `${user.id}/floorplan-${Date.now()}.${ext}`;
 
@@ -223,12 +365,16 @@ Write only the description, no title or labels.`,
       const { data: urlData } = supabase.storage
         .from("property-images")
         .getPublicUrl(fileName);
+      // ✅ Replace local preview with real URL once uploaded
       setForm((p) => ({ ...p, floorPlanUrl: urlData.publicUrl }));
       toast.success("Floor plan uploaded!");
     } else {
+      // ✅ Clear preview if upload fails
+      setForm((p) => ({ ...p, floorPlanUrl: "" }));
       toast.error("Failed to upload floor plan");
     }
-    setUploadingFloorPlan(false); // ✅ hide loading
+
+    setUploadingFloorPlan(false);
   };
 
   const handleSubmit = async () => {
@@ -482,23 +628,82 @@ Write only the description, no title or labels.`,
               value={form.address}
               onChange={(e) => set("address", e.target.value)}
             />
+
             <div className="grid grid-cols-2 gap-3">
-              <Input
-                placeholder="City *"
-                value={form.city}
-                onChange={(e) => set("city", e.target.value)}
-              />
-              <Input
-                placeholder="State *"
-                value={form.state}
-                onChange={(e) => set("state", e.target.value)}
-              />
+              {/* State */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">State *</label>
+                <select
+                  value={form.state}
+                  onChange={(e) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      state: e.target.value,
+                      city: "",
+                      location: "",
+                    }));
+                  }}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  disabled={loading}
+                >
+                  <option value="">Select state</option>
+                  {NIGERIAN_STATES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* City Dropdown — filters by state */}
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">City *</label>
+                <select
+                  value={form.city}
+                  onChange={(e) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      city: e.target.value,
+                      location: "",
+                    }));
+                  }}
+                  disabled={!form.state || loading}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                >
+                  <option value="">Select city</option>
+                  {(CITIES_BY_STATE[form.state] ?? []).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                  <option value="other">Other</option>
+                </select>
+              </div>
             </div>
-            <Input
-              placeholder="Area / Neighbourhood *"
-              value={form.location}
-              onChange={(e) => set("location", e.target.value)}
-            />
+
+            {/* Area — suggestions based on city, free text fallback */}
+            <div className="space-y-1 relative">
+              <label className="text-xs text-muted-foreground">
+                Area / Neighbourhood *
+              </label>
+              <Input
+                placeholder="e.g. Maitama, Lekki Phase 1..."
+                value={form.location}
+                onChange={(e) => set("location", e.target.value)}
+                disabled={loading}
+                list="area-suggestions"
+              />
+              <datalist id="area-suggestions">
+                {(AREAS_BY_CITY[form.city] ?? []).map((area) => (
+                  <option key={area} value={area} />
+                ))}
+              </datalist>
+              {AREAS_BY_CITY[form.city]?.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Suggestions available — type or select from dropdown
+                </p>
+              )}
+            </div>
           </section>
 
           {/* Details */}

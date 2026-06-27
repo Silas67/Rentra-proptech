@@ -44,8 +44,30 @@ const App = () => (
               {/* Public pages */}
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Landing />} />
-                
+
                 <Route path="/pricing" element={<Pricing />} />
+
+                <Route
+                  path="/listings"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={["tenant", "agent", "landlord"]}
+                    >
+                      <PropertySearch />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/messages"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={["tenant", "agent", "landlord"]}
+                    >
+                      <Messages />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
 
               {/* Auth pages */}
@@ -60,14 +82,6 @@ const App = () => (
 
               {/* Dashboards */}
               <Route element={<DashboardLayout />}>
-                <Route
-                  path="/listings"
-                  element={
-                    <ProtectedRoute allowedRoles={["tenant", "agent", "landlord"]}>
-                      <PropertySearch />
-                    </ProtectedRoute>
-                  }
-                />
                 <Route
                   path="/tenant-dashboard"
                   element={
@@ -95,27 +109,16 @@ const App = () => (
                 <Route path="/book-inspection" element={<BookInspection />} />
               </Route>
 
-              <Route
-                path="/messages"
-                element={
-                  <ProtectedRoute allowedRoles={["tenant", "agent", "landlord"]}>
-                    <Messages />
-                  </ProtectedRoute>
-                }
-              />
-
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/agent/:agentId" element={<AgentStorefront />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-
           </TooltipProvider>
         </ErrorBoundary>
-
       </AuthProvider>
-    </BrowserRouter >
-  </QueryClientProvider >
+    </BrowserRouter>
+  </QueryClientProvider>
 );
 
 export default App;
