@@ -364,7 +364,7 @@ const Messages = () => {
               <div className="flex flex-col items-center justify-center h-full py-12 text-center text-muted-foreground">
                 <MessageSquare className="mb-3 h-14 w-14 opacity-20" />
                 <p className="font-medium">Select a conversation</p>
-                <p className="text-sm mt-1">Choose a conversation from the left to start messaging</p>
+                <p className="text-sm mt-1">Choose a conversation from the left to start messaging now.</p>
               </div>
             )}
           </div>
