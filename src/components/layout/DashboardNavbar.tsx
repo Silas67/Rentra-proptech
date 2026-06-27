@@ -1,142 +1,129 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Home, Search, LogOut, Menu, X } from "lucide-react";
-import { LuLayoutDashboard } from "react-icons/lu";
+import { LogOut, Menu, X, Bell, Home, Search } from "lucide-react";
 import { useState } from "react";
 import { heroConfig } from "@/config";
 
-const Navbar = () => {
-    const { user, loading, logout, role } = useAuth();
-    const navigate = useNavigate();
-    const [mobileOpen, setMobileOpen] = useState(false);
+const DashboardNavbar = () => {
+  const { user, logout, role } = useAuth();
+  const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-    const isAuthenticated = !!user;
+  // Get initials from name
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.[0]?.toUpperCase() ?? "?";
 
-    const goToDashboard = () => {
-        if (!user) return navigate("/login");
+  const displayName = user?.name || user?.email?.split("@")[0] || "User";
 
-        if (role === "agent") return navigate("/agent-dashboard");
-        if (role === "landlord") return navigate("/landlord-dashboard");
-        if (role === "tenant") return navigate("/tenant-dashboard");
+  const roleLabel = role === "agent" ? "Agent" : role === "landlord" ? "Landlord" : "Tenant";
 
-        // fallback if role not set
-        return navigate("/onboarding");
-    };
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-40 border-b bg-card/95 backdrop-blur-sm">
+      <div className="container flex h-16 items-center justify-between">
 
-    if (loading) return null;
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+            <Home className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <span className="font-sans font-bold text-lg tracking-tight hidden sm:block">
+            {heroConfig.brandName}
+          </span>
+        </Link>
 
-    return (
-        <nav className="absolute top-0 left-0 right-0 z-40 px-6 md:px-6 py-2 flex items-center justify-between">
-            <div className="container flex h-16 items-center justify-between">
+        {/* Center — role badge */}
+        <div className="hidden md:flex items-center gap-2">
+          <span className="rounded-full border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground capitalize">
+            {roleLabel} Dashboard
+          </span>
+        </div>
 
-                {/* Logo */}
-                <Link to="/" className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                        <Home className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <div className="text-forest-dark font-sans font-bold text-lg tracking-tight">
-                        {heroConfig.brandName}
-                    </div>
-                </Link>
+        {/* Right — user info + actions */}
+        <div className="hidden md:flex items-center gap-3">
 
-                {/* Desktop Navigation */}
-                <div className="hidden items-center gap-6 md:flex">
+          {/* Browse listings */}
+          <Link
+            to="/listings"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Search className="h-4 w-4" />
+            <span className="hidden lg:block">Browse</span>
+          </Link>
 
+          {/* Notifications — placeholder */}
+          <button className="relative flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted transition-colors">
+            <Bell className="h-4 w-4 text-muted-foreground" />
+          </button>
 
+          {/* User info */}
+          <div className="flex items-center gap-2.5 rounded-xl border bg-muted/50 px-3 py-1.5">
+            {/* Avatar */}
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground shrink-0">
+              {initials}
+            </div>
+            <div className="hidden lg:block">
+              <p className="text-sm font-medium leading-none">{displayName}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{roleLabel}</p>
+            </div>
+          </div>
 
-                    {/* Search */}
-                    <Link
-                        to="/listings"
-                        className="flex items-center gap-1.5 text-sm font-medium text-forest-dark/80 transition-colors hover:text-forest-dark"
-                    >
-                        <Search className="h-4 w-4" />
-                    </Link>
+          {/* Logout */}
+          <button
+            onClick={logout}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
+            title="Log out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
 
-                    {/* Auth Section */}
-                    {isAuthenticated ? (
-                        <div className="flex items-center gap-3">
+        {/* Mobile toggle */}
+        <button
+          className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted"
+          onClick={() => setMobileOpen(!mobileOpen)}
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
 
-                            <Button onClick={goToDashboard} variant="outline" size="sm" className="hidden md:flex">
-                                Dashboard
-                            </Button>
+      {/* Mobile Menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t bg-card p-4">
+          <div className="flex flex-col gap-2">
 
-                            <Button variant="outline" size="sm" onClick={logout}>
-                                <LogOut className="h-6 w-4" />
-                            </Button>
-
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            <Button size="sm" asChild>
-                                <Link to="/signup">SignUp / Login</Link>
-                            </Button>
-                        </div>
-                    )}
-
-                </div>
-
-                {/* Mobile Toggle */}
-                <button
-                    className="md:hidden text-white"
-                    onClick={() => setMobileOpen(!mobileOpen)}
-                >
-                    {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                </button>
+            {/* User info */}
+            <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-3 mb-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground shrink-0">
+                {initials}
+              </div>
+              <div>
+                <p className="text-sm font-medium">{displayName}</p>
+                <p className="text-xs text-muted-foreground capitalize">{roleLabel}</p>
+              </div>
             </div>
 
-            {/* Mobile Menu */}
-            {mobileOpen && (
-                <div className="border-t bg-card p-4 md:hidden absolute w-full left-0 top-16">
-                    <div className="flex flex-col gap-3">
+            <Link
+              to="/listings"
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              <Search className="h-4 w-4" />
+              Browse Properties
+            </Link>
 
-                        <Link
-                            to="/search"
-                            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-                            onClick={() => setMobileOpen(false)}
-                        >
-                            <Search className="h-4 w-4" />
-                            Browse Properties
-                        </Link>
-
-                        {isAuthenticated ? (
-                            <>
-                                <button
-                                    onClick={() => {
-                                        logout();
-                                        setMobileOpen(false);
-                                    }}
-                                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-muted"
-                                >
-                                    <LogOut className="h-4 w-4" />
-                                    Log out
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <Link
-                                    to="/login"
-                                    className="rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
-                                    onClick={() => setMobileOpen(false)}
-                                >
-                                    Log in
-                                </Link>
-
-                                <Link
-                                    to="/signup"
-                                    className="rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground"
-                                    onClick={() => setMobileOpen(false)}
-                                >
-                                    Sign up
-                                </Link>
-                            </>
-                        )}
-
-                    </div>
-                </div>
-            )}
-        </nav>
-    );
+            <button
+              onClick={() => { logout(); setMobileOpen(false); }}
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-muted transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          </div>
+        </div>
+      )}
+    </nav>
+  );
 };
 
-export default Navbar;
+export default DashboardNavbar;

@@ -32,10 +32,7 @@ const MessageButton = ({ propertyId, landlordId, agentId, agentPhone, className 
       return;
     }
 
-    // Determine who to message:
-    // Tenant messages agent if available, otherwise landlord
-    // Agent messages landlord
-    // Landlord messages agent
+   
     let recipientId: string;
 
     if (role === "tenant") {

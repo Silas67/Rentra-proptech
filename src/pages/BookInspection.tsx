@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Calendar, Loader2, Home, ShieldCheck, Shield } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/sonner";
 import { propertyService } from "@/services/propertyService";
 import { bookingService } from "@/services/bookingService";
 import { inspectionPassService } from "@/services/inspectionPassService";
@@ -13,8 +13,6 @@ import { crmService } from "@/services/crmService";
 import { Property } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 
-
-// Paystack inline type
 declare const PaystackPop: {
   setup: (config: {
     key: string;
@@ -27,14 +25,44 @@ declare const PaystackPop: {
   }) => { openIframe: () => void };
 };
 
-const INSPECTION_PASS_AMOUNT = 15000; // ₦15,000
+const INSPECTION_PASS_AMOUNT = 15000;
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+const Skeleton = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse rounded-md bg-muted ${className}`} />
+);
+
+const BookInspectionSkeleton = () => (
+  <div className="min-h-screen py-6">
+    <div className="container max-w-lg">
+      <Skeleton className="h-8 w-20 mb-4" />
+      <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-8 rounded-lg" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-56" />
+          </div>
+        </div>
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <div className="grid grid-cols-2 gap-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <Skeleton className="h-12 w-full rounded-xl" />
+      </div>
+    </div>
+  </div>
+);
 
 const BookInspection = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const agentRef = searchParams.get("ref");
 
@@ -50,9 +78,9 @@ const BookInspection = () => {
   const [wantsPass, setWantsPass] = useState(true);
 
   const [form, setForm] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
+    name: "",
+    email: "",
+    phone: "",
     date: "",
     time: "",
   });
@@ -104,7 +132,6 @@ const BookInspection = () => {
   const handleSubmitReview = async () => {
     if (!user || !bookingId || rating === 0) return;
     setSubmittingReview(true);
-
     await supabase.from("agent_reviews").insert({
       agent_id: agentRef ?? property?.agentId,
       reviewer_id: user.id,
@@ -112,13 +139,11 @@ const BookInspection = () => {
       rating,
       comment,
     });
-
     setSubmittingReview(false);
     setShowReview(false);
-    toast({ title: "Review submitted! Thank you ✓" });
+    toast.success("Review submitted! Thank you ✓");
   };
 
-  // Step 1 — Submit the booking form
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { navigate("/login"); return; }
@@ -142,13 +167,12 @@ const BookInspection = () => {
     setSubmitting(false);
 
     if (!booking) {
-      toast({ title: "Failed to create booking", variant: "destructive" });
+      toast.error("Failed to create booking. Please try again.");
       return;
     }
 
     setBookingId(booking.id);
 
-    // Auto-create CRM lead if booking came through agent storefront
     if (agentRef) {
       crmService.createLeadFromBooking({
         agentId: agentRef,
@@ -159,21 +183,20 @@ const BookInspection = () => {
       });
     }
 
+    toast.success("Booking created! Choose your next step.");
     setStep("pass");
   };
 
-  // Step 2a — Pay for inspection pass via Paystack
   const handlePayPass = () => {
     if (!user || !bookingId || !property) return;
 
     const handler = PaystackPop.setup({
       key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
       email: form.email,
-      amount: INSPECTION_PASS_AMOUNT * 100, // Paystack uses kobo
+      amount: INSPECTION_PASS_AMOUNT * 100,
       currency: "NGN",
       ref: `rentra_pass_${Date.now()}`,
       onSuccess: async (transaction) => {
-        // Save the pass record to Supabase
         const pass = await inspectionPassService.createPass({
           bookingId,
           tenantId: user.id,
@@ -184,48 +207,38 @@ const BookInspection = () => {
         });
 
         if (!pass) {
-          toast({ title: "Payment received but pass record failed. Contact support.", variant: "destructive" });
+          toast.error("Payment received but pass record failed. Contact support.");
           return;
         }
 
-        toast({ title: "Inspection pass secured! ✓" });
+        toast.success("Inspection pass secured! ✓");
         setStep("confirmed");
+
         if (property.agentPhone) {
           const message = `New inspection booking on Rentra!\n\nProperty: ${property.title}\nTenant: ${form.name}\nPhone: ${form.phone}\nDate: ${form.date} at ${form.time}\n\nLog in to Rentra to confirm.`;
           window.open(`https://wa.me/${property.agentPhone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
         }
       },
       onCancel: () => {
-        toast({ title: "Payment cancelled", variant: "destructive" });
+        toast.error("Payment cancelled");
       },
     });
 
     handler.openIframe();
   };
 
-  // Step 2b — Skip the pass and just confirm booking
   const handleSkipPass = () => {
-    toast({ title: "Inspection booked! 🎉", description: `You're set for ${form.date} at ${form.time}.` });
+    toast.success(`Inspection booked! You're set for ${form.date} at ${form.time}.`);
     setStep("confirmed");
 
-    if (property.agentPhone) {
-      const message = `New inspection booking on Rentra!\n\nProperty: ${property.title}\nTenant: ${form.name}\nPhone: ${form.phone}\nDate: ${form.date} at ${form.time}\n\nLog in to Rentra to confirm.`;
+    if (property?.agentPhone) {
+      const message = `New inspection booking on Rentra!\n\nProperty: ${property.title}\nTenant: ${form.name}\nPhone: ${form.phone}\nDate: ${form.date} at ${form.time}`;
       window.open(`https://wa.me/${property.agentPhone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
     }
   };
 
-
-
-  if (loadingProperty) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center text-muted-foreground">
-          <Loader2 className="mx-auto mb-3 h-10 w-10 animate-spin opacity-40" />
-          <p className="text-sm">Loading property...</p>
-        </div>
-      </div>
-    );
-  }
+  // ⏳ Skeleton while loading property
+  if (loadingProperty) return <BookInspectionSkeleton />;
 
   if (!property) {
     return (
@@ -241,7 +254,7 @@ const BookInspection = () => {
 
   const isRent = property.listingType === "rent";
 
-  // ✅ Confirmed state
+  // ✅ Confirmed
   if (step === "confirmed") {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
@@ -252,7 +265,8 @@ const BookInspection = () => {
           <h1 className="font-display text-2xl font-bold">Booking Confirmed!</h1>
           <p className="text-muted-foreground text-sm">
             Your inspection for <span className="font-medium text-foreground">{property.title}</span> is
-            scheduled for <span className="font-medium text-foreground">{form.date}</span> at <span className="font-medium text-foreground">{form.time}</span>.
+            scheduled for <span className="font-medium text-foreground">{form.date}</span> at{" "}
+            <span className="font-medium text-foreground">{form.time}</span>.
           </p>
           {wantsPass && (
             <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700 flex items-center gap-2">
@@ -260,6 +274,41 @@ const BookInspection = () => {
               Your ₦{INSPECTION_PASS_AMOUNT.toLocaleString()} inspection pass is secured in escrow
             </div>
           )}
+
+          {/* Review section */}
+          {agentRef && !showReview && (
+            <button onClick={() => setShowReview(true)} className="text-sm text-primary hover:underline">
+              Leave a review for your agent
+            </button>
+          )}
+
+          {showReview && (
+            <div className="rounded-xl border bg-card p-4 space-y-3 text-left">
+              <p className="font-semibold text-sm">Rate your agent</p>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button key={star} onClick={() => setRating(star)}
+                    className={`text-2xl transition-colors ${star <= rating ? "text-yellow-400" : "text-muted-foreground"}`}>
+                    ★
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Share your experience with this agent..."
+                rows={3}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowReview(false)}>Skip</Button>
+                <Button size="sm" className="flex-1" onClick={handleSubmitReview} disabled={submittingReview || rating === 0}>
+                  {submittingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Review"}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <Button onClick={() => navigate("/tenant-dashboard")}>View My Bookings</Button>
             <Button variant="outline" onClick={() => navigate("/listings")}>Back to Listings</Button>
@@ -275,8 +324,6 @@ const BookInspection = () => {
       <div className="min-h-screen py-6">
         <div className="container max-w-lg">
           <div className="rounded-xl border bg-card p-6 shadow-sm space-y-5">
-
-            {/* Header */}
             <div className="text-center space-y-2">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                 <Shield className="h-7 w-7 text-primary" />
@@ -287,37 +334,28 @@ const BookInspection = () => {
               </p>
             </div>
 
-            {/* What you get */}
             <div className="rounded-xl border bg-muted/50 p-4 space-y-3 text-sm">
               <p className="font-semibold">What you get with a Verified Pass:</p>
-              <div className="space-y-2">
-                {[
-                  "₦15,000 held securely in escrow — not paid to agent until inspection confirmed",
-                  "Full refund if property doesn't match listing or agent no-shows",
-                  "Priority support if anything goes wrong",
-                  "Verified Inspection badge on your booking",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-2">
-                    <ShieldCheck className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">{item}</span>
-                  </div>
-                ))}
-              </div>
+              {[
+                "₦15,000 held securely in escrow — not paid to agent until inspection confirmed",
+                "Full refund if property doesn't match listing or agent no-shows",
+                "Priority support if anything goes wrong",
+                "Verified Inspection badge on your booking",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
+                  <ShieldCheck className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                  <span className="text-muted-foreground">{item}</span>
+                </div>
+              ))}
             </div>
 
-            {/* Price */}
             <div className="rounded-xl border bg-card p-4 text-center">
               <p className="text-2xl font-bold text-primary">₦{INSPECTION_PASS_AMOUNT.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">Held in escrow until inspection is confirmed</p>
             </div>
 
-            {/* Buttons */}
             <div className="space-y-3">
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={() => { setWantsPass(true); handlePayPass(); }}
-              >
+              <Button className="w-full" size="lg" onClick={() => { setWantsPass(true); handlePayPass(); }}>
                 <ShieldCheck className="mr-2 h-4 w-4" />
                 Pay ₦{INSPECTION_PASS_AMOUNT.toLocaleString()} — Secure My Pass
               </Button>
@@ -338,7 +376,7 @@ const BookInspection = () => {
     );
   }
 
-  // 📋 Booking Form (default step)
+  // 📋 Booking Form
   return (
     <div className="min-h-screen py-6">
       <div className="container max-w-lg">
@@ -360,7 +398,6 @@ const BookInspection = () => {
             </div>
           </div>
 
-          {/* Agent attribution notice */}
           {agentRef && (
             <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
               🏠 You're booking through an agent's storefront
@@ -398,6 +435,7 @@ const BookInspection = () => {
                 onChange={(e) => { setForm({ ...form, name: e.target.value }); if (errors.name) setErrors((p) => ({ ...p, name: undefined })); }}
                 placeholder="Your full name"
                 className={errors.name ? "border-destructive" : ""}
+                disabled={submitting}
               />
               {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
             </div>
@@ -411,6 +449,7 @@ const BookInspection = () => {
                 onChange={(e) => { setForm({ ...form, email: e.target.value }); if (errors.email) setErrors((p) => ({ ...p, email: undefined })); }}
                 placeholder="your@email.com"
                 className={errors.email ? "border-destructive" : ""}
+                disabled={submitting}
               />
               {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
@@ -424,6 +463,7 @@ const BookInspection = () => {
                 onChange={(e) => { setForm({ ...form, phone: e.target.value }); if (errors.phone) setErrors((p) => ({ ...p, phone: undefined })); }}
                 placeholder="+234 000 000 0000"
                 className={errors.phone ? "border-destructive" : ""}
+                disabled={submitting}
               />
               {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
             </div>
@@ -438,6 +478,7 @@ const BookInspection = () => {
                   value={form.date}
                   onChange={(e) => { setForm({ ...form, date: e.target.value }); if (errors.date) setErrors((p) => ({ ...p, date: undefined })); }}
                   className={errors.date ? "border-destructive" : ""}
+                  disabled={submitting}
                 />
                 {errors.date && <p className="text-xs text-destructive">{errors.date}</p>}
               </div>
@@ -449,66 +490,29 @@ const BookInspection = () => {
                   value={form.time}
                   onChange={(e) => { setForm({ ...form, time: e.target.value }); if (errors.time) setErrors((p) => ({ ...p, time: undefined })); }}
                   className={errors.time ? "border-destructive" : ""}
+                  disabled={submitting}
                 />
                 {errors.time && <p className="text-xs text-destructive">{errors.time}</p>}
               </div>
             </div>
 
+            {/* ✅ Submit button with clear loading state */}
             <Button className="w-full" size="lg" type="submit" disabled={submitting}>
-              {submitting
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Booking...</>
-                : <><Calendar className="mr-2 h-4 w-4" /> Continue</>
-              }
+              {submitting ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating your booking...</>
+              ) : (
+                <><Calendar className="mr-2 h-4 w-4" /> Continue</>
+              )}
             </Button>
 
+            {/* ✅ Loading notice so user knows what's happening */}
+            {submitting && (
+              <p className="text-center text-xs text-muted-foreground animate-pulse">
+                Please wait — saving your inspection request...
+              </p>
+            )}
+
           </form>
-
-          {/* Review section — only if came through agent storefront */}
-          {agentRef && !showReview && (
-            <button
-              onClick={() => setShowReview(true)}
-              className="text-sm text-primary hover:underline"
-            >
-              Leave a review for your agent
-            </button>
-          )}
-
-          {showReview && (
-            <div className="rounded-xl border bg-card p-4 space-y-3 text-left">
-              <p className="font-semibold text-sm">Rate your agent</p>
-
-              {/* Star rating */}
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => setRating(star)}
-                    className={`text-2xl transition-colors ${star <= rating ? "text-yellow-400" : "text-muted-foreground"
-                      }`}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your experience with this agent..."
-                rows={3}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowReview(false)}>
-                  Skip
-                </Button>
-                <Button size="sm" className="flex-1" onClick={handleSubmitReview} disabled={submittingReview || rating === 0}>
-                  {submittingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Review"}
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

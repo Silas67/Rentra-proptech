@@ -27,6 +27,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import AgentStorefront from "./pages/AgentStorefront";
 import Messages from "./pages/Messages";
 import Pricing from "./pages/pricing";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -43,7 +44,7 @@ const App = () => (
               {/* Public pages */}
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Landing />} />
-                <Route path="/book/:id" element={<BookInspection />} />
+                
                 <Route path="/pricing" element={<Pricing />} />
               </Route>
 
@@ -53,6 +54,8 @@ const App = () => (
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/property/:id" element={<PropertyDetail />} />
                 <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/book/:id" element={<BookInspection />} />
               </Route>
 
               {/* Dashboards */}

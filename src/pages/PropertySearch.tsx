@@ -55,27 +55,6 @@ const PropertySearch = () => {
   const [priceRange, setPriceRange] = useState("all");
   const [listingType, setListingType] = useState("all");
 
-  const handleSaveSearch = async () => {
-    if (!user) { navigate("/login"); return; }
-    setSavingSearch(true);
-
-    const label = [
-      query || "All properties",
-      type !== "all" ? type : null,
-      listingType !== "all" ? listingType : null,
-      priceRange !== "all" ? priceRange : null,
-    ].filter(Boolean).join(" · ");
-
-    const saved = await savedSearchService.saveSearch(user.id, label, {
-      query, type, listingType, priceRange,
-    });
-    if (saved) {
-      setSavedSearches((prev) => [saved, ...prev]);
-      toast({ title: "Search saved! We'll alert you when new matches appear ✓" });
-    }
-
-    setSavingSearch(false);
-  };
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -169,20 +148,7 @@ const PropertySearch = () => {
               <SelectItem value="high">Above ₦5M</SelectItem>
             </SelectContent>
           </Select>
-          {role === "tenant" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveSearch}
-              disabled={savingSearch}
-              className="shrink-0"
-            >
-              {savingSearch
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : <><Bookmark className="mr-1.5 h-4 w-4" /> Save Search</>
-              }
-            </Button>
-          )}
+          
         </div>
 
         {/* States */}

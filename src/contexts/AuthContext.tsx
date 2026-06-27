@@ -1,36 +1,38 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { authService } from "@/services/authService"
-import { useNavigate } from "react-router-dom"
-
+import { createContext, useContext, useEffect, useState, useRef } from "react";
+import { supabase } from "@/lib/supabase";
+import { authService } from "@/services/authService";
+import { useNavigate } from "react-router-dom";
 
 type User = {
-  id: string
-  email?: string
-  name?: string
-  phone?: string
-}
+  id: string;
+  email?: string;
+  name?: string;
+  phone?: string;
+};
 
-export type UserRole = "tenant" | "agent" | "landlord"
+export type UserRole = "tenant" | "agent" | "landlord";
 
 type AuthContextType = {
-  user: User | null
-  role: UserRole | null
-  loading: boolean
-  signup: (email: string, password: string, name: string, phone: number) => Promise<boolean>
-  login: (email: string, password: string) => Promise<boolean>
-  logout: () => Promise<void>
-  setRole: (role: UserRole) => Promise<void>
-}
+  user: User | null;
+  role: UserRole | null;
+  loading: boolean;
+  signup: (email: string, password: string, name: string, phone: number) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  setRole: (role: UserRole) => Promise<void>;
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [role, setRoleState] = useState<UserRole | null>(null)
-  const [loading, setLoading] = useState(true)
-  const navigate = useNavigate()
+  const [user, setUser] = useState<User | null>(null);
+  const [role, setRoleState] = useState<UserRole | null>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // ✅ Use ref so the flag persists across renders without causing re-renders
+  const isSigningUp = useRef(false);
 
   // 🔍 Fetch profile
   const fetchProfile = async (userId: string) => {
@@ -38,58 +40,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .from("profiles")
       .select("role, name, phone")
       .eq("id", userId)
-      .single()
+      .maybeSingle(); // ✅ won't crash if no profile row exists yet
 
     if (error) {
-      console.error("Error fetching profile:", error)
-      return
+      console.error("Error fetching profile:", error);
+      return;
     }
 
     if (data) {
-      setRoleState(data.role)
+      setRoleState(data.role);
       setUser((prev) =>
-        prev
-          ? { ...prev, name: data.name, phone: data.phone }
-          : prev
-      )
+        prev ? { ...prev, name: data.name, phone: data.phone } : prev
+      );
     }
-  }
+  };
 
   // 🚀 INIT
   useEffect(() => {
-    let initialLoad = true
+    let initialLoad = true;
 
     const init = async () => {
-      const currentUser = await authService.getCurrentUser()
+      const currentUser = await authService.getCurrentUser();
       if (currentUser) {
-        setUser(currentUser)
-        await fetchProfile(currentUser.id)
+        setUser(currentUser);
+        await fetchProfile(currentUser.id);
       }
-      setLoading(false)
-    }
+      setLoading(false);
+    };
 
-    init()
+    init();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (initialLoad) {
-          initialLoad = false
-          return
+        // ✅ Skip during initial load AND during signup
+        if (initialLoad || isSigningUp.current) {
+          initialLoad = false;
+          return;
         }
 
         if (session?.user) {
-          const u: User = { id: session.user.id, email: session.user.email }
-          setUser(u)
-          await fetchProfile(u.id)
+          const u: User = { id: session.user.id, email: session.user.email };
+          setUser(u);
+          await fetchProfile(u.id);
         } else {
-          setUser(null)
-          setRoleState(null)
+          setUser(null);
+          setRoleState(null);
         }
       }
-    )
+    );
 
-    return () => listener.subscription.unsubscribe()
-  }, [])
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   // 📝 SIGNUP
   const signup = async (
@@ -98,88 +99,89 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     name: string,
     phone: number
   ) => {
-    const user = await authService.signup(email, password, name)
+    isSigningUp.current = true; // ✅ block onAuthStateChange interference
 
-    if (!user) return false
+    try {
+      const newUser = await authService.signup(email, password, name);
 
-    setUser(user)
+      if (!newUser) {
+        isSigningUp.current = false;
+        return false;
+      }
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        name,
-        phone: String(phone),
-      })
-      .eq("id", user.id)
+      setUser(newUser);
 
-    if (error) {
-      console.error("Profile update error:", error)
+      // ✅ upsert creates the row if it doesn't exist
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({
+          id: newUser.id,
+          name,
+          phone: String(phone),
+        });
+
+      if (error) {
+        console.error("Profile upsert error:", error);
+      }
+
+      await fetchProfile(newUser.id);
+      return true;
+    } catch (err) {
+      console.error("Signup error:", err);
+      return false;
+    } finally {
+      isSigningUp.current = false; // ✅ always reset even if something throws
     }
+  };
 
-    await fetchProfile(user.id)
-
-    return true
-  }
-
+  // 🔐 LOGIN
   const login = async (email: string, password: string) => {
-    const user = await authService.login(email, password)
+    const loggedInUser = await authService.login(email, password);
 
-    if (!user) return false
+    if (!loggedInUser) return false;
 
-    setUser(user)
-    await fetchProfile(user.id)
+    setUser(loggedInUser);
+    await fetchProfile(loggedInUser.id);
 
-    return true
-  }
+    return true;
+  };
 
-
+  // 🚪 LOGOUT
   const logout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setRoleState(null)
-    navigate("/")
-  }
+    await supabase.auth.signOut();
+    setUser(null);
+    setRoleState(null);
+    navigate("/");
+  };
 
-
+  // 🎭 SET ROLE
   const setRole = async (role: UserRole) => {
-    if (!user) return
+    if (!user) return;
 
     const { error } = await supabase
       .from("profiles")
       .update({ role })
-      .eq("id", user.id)
+      .eq("id", user.id);
 
     if (error) {
-      console.error("Error setting role:", error)
-      return
+      console.error("Error setting role:", error);
+      return;
     }
 
-    setRoleState(role)
-  }
+    setRoleState(role);
+  };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        role,
-        loading,
-        signup,
-        login,
-        logout,
-        setRole,
-      }}
-    >
+    <AuthContext.Provider value={{ user, role, loading, signup, login, logout, setRole }}>
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
-
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider")
+    throw new Error("useAuth must be used inside AuthProvider");
   }
-
-  return context
-}
+  return context;
+};
